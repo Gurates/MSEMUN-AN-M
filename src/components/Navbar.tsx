@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FlameLogo } from './FlameLogo';
 import { Menu, X } from 'lucide-react';
 
-export type PageView = 'home' | 'committees' | 'apply';
+export type PageView = 'home' | 'committees' | 'apply' | 'admin';
 
 interface NavbarProps {
   currentPage: PageView;
