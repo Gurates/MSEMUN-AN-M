@@ -24,10 +24,14 @@ export const EmbersCanvas: React.FC<{ className?: string }> = ({ className = '' 
     let width = (canvas.width = canvas.parentElement?.clientWidth || window.innerWidth);
     let height = (canvas.height = canvas.parentElement?.clientHeight || window.innerHeight);
 
+    let resizeTimer: ReturnType<typeof setTimeout>;
     const handleResize = () => {
-      if (!canvas) return;
-      width = canvas.width = canvas.parentElement?.clientWidth || window.innerWidth;
-      height = canvas.height = canvas.parentElement?.clientHeight || window.innerHeight;
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (!canvas) return;
+        width = canvas.width = canvas.parentElement?.clientWidth || window.innerWidth;
+        height = canvas.height = canvas.parentElement?.clientHeight || window.innerHeight;
+      }, 100);
     };
 
     window.addEventListener('resize', handleResize);
@@ -40,17 +44,18 @@ export const EmbersCanvas: React.FC<{ className?: string }> = ({ className = '' 
       'rgba(255, 214, 102, '
     ];
 
-    const particleCount = 38;
+    const isMobile = window.innerWidth < 768;
+    const particleCount = isMobile ? 18 : 32;
     const particles: Particle[] = [];
 
     const createParticle = (initialY = false): Particle => {
       const colorBase = colors[Math.floor(Math.random() * colors.length)];
       return {
-        x: width * 0.5 + (Math.random() - 0.5) * (width * 0.45),
-        y: initialY ? Math.random() * height : height * 0.75 + Math.random() * (height * 0.25),
-        size: Math.random() * 2.2 + 0.8,
-        speedY: Math.random() * 0.9 + 0.4,
-        speedX: (Math.random() - 0.5) * 0.6,
+        x: width * 0.5 + (Math.random() - 0.5) * (width * 0.5),
+        y: initialY ? Math.random() * height : height * 0.8 + Math.random() * (height * 0.2),
+        size: Math.random() * 2 + 0.8,
+        speedY: Math.random() * 0.8 + 0.3,
+        speedX: (Math.random() - 0.5) * 0.5,
         opacity: Math.random() * 0.7 + 0.2,
         fadeSpeed: Math.random() * 0.003 + 0.002,
         color: colorBase
@@ -64,23 +69,22 @@ export const EmbersCanvas: React.FC<{ className?: string }> = ({ className = '' 
     const render = () => {
       ctx.clearRect(0, 0, width, height);
 
-      particles.forEach((p, index) => {
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
         p.y -= p.speedY;
-        p.x += p.speedX + Math.sin(p.y * 0.02) * 0.3;
+        p.x += p.speedX + Math.sin(p.y * 0.02) * 0.25;
         p.opacity -= p.fadeSpeed;
 
         if (p.opacity <= 0 || p.y <= 0) {
-          particles[index] = createParticle(false);
-          return;
+          particles[i] = createParticle(false);
+          continue;
         }
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fillStyle = `${p.color}${p.opacity})`;
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = 'rgba(255, 110, 20, 0.6)';
         ctx.fill();
-      });
+      }
 
       animationFrameId = requestAnimationFrame(render);
     };
@@ -89,6 +93,7 @@ export const EmbersCanvas: React.FC<{ className?: string }> = ({ className = '' 
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      clearTimeout(resizeTimer);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
@@ -97,7 +102,7 @@ export const EmbersCanvas: React.FC<{ className?: string }> = ({ className = '' 
     <canvas
       ref={canvasRef}
       className={`absolute inset-0 pointer-events-none ${className}`}
-      style={{ zIndex: 1 }}
+      style={{ zIndex: 1, transform: 'translate3d(0, 0, 0)' }}
     />
   );
 };

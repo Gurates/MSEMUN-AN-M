@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ArrowRight, Shield } from 'lucide-react';
@@ -6,19 +6,10 @@ import { PageView } from './Navbar';
 
 gsap.registerPlugin(ScrollTrigger);
 
-// ── Mobile Detection Utility ──
-const getIsMobile = () => window.matchMedia('(max-width: 768px)').matches;
+const TOTAL_FRAMES = 240;
 
-// ── Frame Configuration (adaptive per device) ──
-const DESKTOP_TOTAL_FRAMES = 240;
-const MOBILE_FRAME_STEP = 3;   // Load every 3rd frame on mobile → 80 frames
-const MOBILE_TOTAL_FRAMES = Math.ceil(DESKTOP_TOTAL_FRAMES / MOBILE_FRAME_STEP); // 80
-
-/** Returns the original asset path for a given LOGICAL index (0-based) */
-const getFramePath = (logicalIndex: number, isMobile: boolean) => {
-  // On mobile, map logical index back to the original frame number
-  const originalIndex = isMobile ? logicalIndex * MOBILE_FRAME_STEP : logicalIndex;
-  const frameNum = String(Math.min(originalIndex + 1, DESKTOP_TOTAL_FRAMES)).padStart(3, '0');
+const getFramePath = (index: number) => {
+  const frameNum = String(index + 1).padStart(3, '0');
   return `/images/ezgif-frame-${frameNum}-2x.jpg`;
 };
 
@@ -29,16 +20,16 @@ interface HomePageProps {
 export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const sectionRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const heroOverlayRef = useRef<HTMLDivElement>(null);
+  const ctaOverlayRef = useRef<HTMLDivElement>(null);
+  const progressBarRef = useRef<HTMLDivElement>(null);
+
   const imagesRef = useRef<HTMLImageElement[]>([]);
   const currentFrameRef = useRef<number>(0);
+  const pendingFrameRef = useRef<number>(0);
+  const isRenderingRef = useRef<boolean>(false);
   const rafIdRef = useRef<number>(0);
 
-  // Detect mobile once on mount (avoids re-detection on every frame)
-  const isMobile = useMemo(() => getIsMobile(), []);
-  const totalFrames = isMobile ? MOBILE_TOTAL_FRAMES : DESKTOP_TOTAL_FRAMES;
-
-  const [scrollProgress, setScrollProgress] = useState<number>(0);
-  const scrollProgressRef = useRef<number>(0);
   const [timeLeft, setTimeLeft] = useState({
     days: 30,
     hours: 0,
@@ -46,7 +37,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     seconds: 0
   });
 
-  // ── Countdown Timer ──
+  // ── Countdown Timer (isolated, updates only once per second) ──
   useEffect(() => {
     const targetDate = new Date();
     targetDate.setDate(targetDate.getDate() + 30);
@@ -74,14 +65,14 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const minutesDigits = String(timeLeft.minutes).padStart(2, '0').split('');
   const secondsDigits = String(timeLeft.seconds).padStart(2, '0').split('');
 
-  // ── Draw a frame on the canvas with fallback to nearest loaded frame ──
+  // ── High-Performance Canvas Draw (Direct 2D Context) ──
   const drawFrame = useCallback((index: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) return;
 
-    // Find target image or nearest loaded frame to avoid any black flicker
+    // Find target image or nearest loaded frame to guarantee zero black flicker
     let img = imagesRef.current[index];
     if (!img || !img.complete || img.naturalWidth === 0) {
       for (let i = index - 1; i >= 0; i--) {
@@ -100,39 +91,56 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     const iw = img.naturalWidth;
     const ih = img.naturalHeight;
 
-    // Object-fit: cover — scales up to fill, crops overflow, preserves aspect ratio
+    // Object-fit: cover logic (aspect ratio preserved, zero stretching)
     const scale = Math.max(cw / iw, ch / ih);
     const sw = iw * scale;
     const sh = ih * scale;
-    const sx = (cw - sw) / 2;
-    const sy = (ch - sh) / 2;
+    const sx = (cw - sw) * 0.5;
+    const sy = (ch - sh) * 0.5;
 
     ctx.imageSmoothingEnabled = true;
-    // On mobile, use faster smoothing to reduce GPU load
-    ctx.imageSmoothingQuality = isMobile ? 'medium' : 'high';
-    ctx.clearRect(0, 0, cw, ch);
+    ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(img, 0, 0, iw, ih, sx, sy, sw, sh);
-  }, [isMobile]);
+  }, []);
 
-  // ── Size the canvas pixel buffer to match viewport × DPR ──
+  // ── RequestAnimationFrame Synchronized Render ──
+  const requestFrameRender = useCallback((targetIndex: number) => {
+    pendingFrameRef.current = targetIndex;
+
+    if (!isRenderingRef.current) {
+      isRenderingRef.current = true;
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = requestAnimationFrame(() => {
+        const frameToDraw = pendingFrameRef.current;
+        if (frameToDraw !== currentFrameRef.current) {
+          currentFrameRef.current = frameToDraw;
+          drawFrame(frameToDraw);
+        }
+        isRenderingRef.current = false;
+      });
+    }
+  }, [drawFrame]);
+
+  // ── Size the canvas pixel buffer (DPR capped at 1.5 on mobile to save 60% GPU bandwidth) ──
   const sizeCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    // Mobile: cap DPR at 1 to save massive GPU/memory overhead
-    const dpr = isMobile ? 1 : Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = window.innerWidth * dpr;
-    canvas.height = window.innerHeight * dpr;
-    drawFrame(currentFrameRef.current);
-  }, [drawFrame, isMobile]);
+    const isMobile = window.innerWidth < 768;
+    const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2);
 
-  // ── Smart Progressive Chunked Preloading (Bandwidth-Friendly) ──
+    canvas.width = Math.round(window.innerWidth * dpr);
+    canvas.height = Math.round(window.innerHeight * dpr);
+    drawFrame(currentFrameRef.current);
+  }, [drawFrame]);
+
+  // ── Smart Progressive Chunked Preloading ──
   useEffect(() => {
-    const images: HTMLImageElement[] = new Array(totalFrames);
+    const images: HTMLImageElement[] = new Array(TOTAL_FRAMES);
     imagesRef.current = images;
 
-    // 1. High priority: Load 1st frame immediately so hero background appears with 0 delay
+    // 1. Load frame 0 immediately
     const firstImg = new Image();
-    firstImg.src = getFramePath(0, isMobile);
+    firstImg.src = getFramePath(0);
     firstImg.onload = () => {
       images[0] = firstImg;
       sizeCanvas();
@@ -140,21 +148,18 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     };
     images[0] = firstImg;
 
-    // 2. Progressive background loading
-    // Desktop: batches of 4 every 35ms
-    // Mobile:  batches of 2 every 60ms (gentler on bandwidth + CPU)
+    // 2. Load remaining frames in batches of 4
     let currentBatch = 1;
-    const BATCH_SIZE = isMobile ? 2 : 4;
-    const BATCH_DELAY = isMobile ? 60 : 35;
+    const BATCH_SIZE = 4;
     let isCancelled = false;
 
     const loadNextBatch = () => {
-      if (isCancelled || currentBatch >= totalFrames) return;
+      if (isCancelled || currentBatch >= TOTAL_FRAMES) return;
 
-      const end = Math.min(currentBatch + BATCH_SIZE, totalFrames);
+      const end = Math.min(currentBatch + BATCH_SIZE, TOTAL_FRAMES);
       for (let i = currentBatch; i < end; i++) {
         const img = new Image();
-        img.src = getFramePath(i, isMobile);
+        img.src = getFramePath(i);
         img.onload = () => {
           images[i] = img;
         };
@@ -162,88 +167,89 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       }
       currentBatch = end;
 
-      if (currentBatch < totalFrames) {
-        setTimeout(loadNextBatch, BATCH_DELAY);
+      if (currentBatch < TOTAL_FRAMES) {
+        setTimeout(loadNextBatch, 30);
       }
     };
 
-    // Give browser initial quiet window so video intro buffers at full bandwidth
     const timer = setTimeout(() => {
       loadNextBatch();
-    }, isMobile ? 500 : 250);
+    }, 200);
 
     return () => {
       isCancelled = true;
       clearTimeout(timer);
+      cancelAnimationFrame(rafIdRef.current);
     };
-  }, [drawFrame, sizeCanvas, totalFrames, isMobile]);
+  }, [drawFrame, sizeCanvas]);
 
-  // ── Resize canvas on window resize (debounced on mobile) ──
+  // ── Resize canvas on window resize ──
   useEffect(() => {
-    if (isMobile) {
-      let resizeTimer: ReturnType<typeof setTimeout>;
-      const debouncedResize = () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(sizeCanvas, 150);
-      };
-      window.addEventListener('resize', debouncedResize);
-      sizeCanvas();
-      return () => {
-        window.removeEventListener('resize', debouncedResize);
-        clearTimeout(resizeTimer);
-      };
-    } else {
-      window.addEventListener('resize', sizeCanvas);
-      sizeCanvas();
-      return () => window.removeEventListener('resize', sizeCanvas);
-    }
-  }, [sizeCanvas, isMobile]);
+    let resizeTimer: ReturnType<typeof setTimeout>;
+    const handleResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(sizeCanvas, 100);
+    };
 
-  // ── GSAP ScrollTrigger — pin the section & scrub through frames ──
+    window.addEventListener('resize', handleResize);
+    sizeCanvas();
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(resizeTimer);
+    };
+  }, [sizeCanvas]);
+
+  // ── GSAP ScrollTrigger with ZERO React Re-render Overhead ──
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
+
+    const heroOverlay = heroOverlayRef.current;
+    const ctaOverlay = ctaOverlayRef.current;
+    const progressBar = progressBarRef.current;
 
     const ctx = gsap.context(() => {
       ScrollTrigger.create({
         trigger: section,
         start: 'top top',
-        end: () => (isMobile ? '+=2400' : '+=3800'),
+        end: () => (window.innerWidth < 768 ? '+=2200' : '+=3600'),
         pin: true,
-        // Mobile: slower scrub = smoother feeling with fewer frames
-        scrub: isMobile ? 0.6 : 0.35,
+        scrub: 0.35,
         onUpdate: (self) => {
           const progress = self.progress;
-          const idx = Math.min(totalFrames - 1, Math.max(0, Math.round(progress * (totalFrames - 1))));
 
-          if (idx !== currentFrameRef.current) {
-            currentFrameRef.current = idx;
-            // Cancel previous pending RAF to avoid stacking
-            cancelAnimationFrame(rafIdRef.current);
-            rafIdRef.current = requestAnimationFrame(() => drawFrame(idx));
+          // 1. Frame Index calculation & throttled canvas render
+          const targetIndex = Math.min(TOTAL_FRAMES - 1, Math.max(0, Math.round(progress * (TOTAL_FRAMES - 1))));
+          requestFrameRender(targetIndex);
+
+          // 2. Direct DOM update for Hero Overlay (Zero React re-render)
+          if (heroOverlay) {
+            const heroOpacity = Math.max(0, 1 - progress * 4.2);
+            const heroScale = 1 - progress * 0.1;
+            heroOverlay.style.opacity = String(heroOpacity);
+            heroOverlay.style.transform = `translate3d(0, ${-progress * 40}px, 0) scale(${heroScale})`;
+            heroOverlay.style.pointerEvents = heroOpacity > 0.08 ? 'auto' : 'none';
           }
 
-          // Throttle React state updates: only update if progress changed meaningfully
-          // This prevents 60+ setState calls per second during fast scrolling
-          if (Math.abs(progress - scrollProgressRef.current) > 0.005) {
-            scrollProgressRef.current = progress;
-            setScrollProgress(progress);
+          // 3. Direct DOM update for End CTA Overlay (Zero React re-render)
+          if (ctaOverlay) {
+            const ctaOpacity = Math.max(0, Math.min(1, (progress - 0.78) * 5));
+            const ctaY = (1 - ctaOpacity) * 35;
+            ctaOverlay.style.opacity = String(ctaOpacity);
+            ctaOverlay.style.transform = `translate3d(0, ${ctaY}px, 0)`;
+            ctaOverlay.style.pointerEvents = ctaOpacity > 0.12 ? 'auto' : 'none';
+          }
+
+          // 4. Direct DOM update for Progress Bar (Zero React re-render)
+          if (progressBar) {
+            progressBar.style.width = `${progress * 100}%`;
           }
         }
       });
     }, section);
 
     return () => ctx.revert();
-  }, [drawFrame, totalFrames, isMobile]);
-
-  // ── UI layer opacity/transforms synced to scroll progress ──
-  const heroOpacity = Math.max(0, 1 - scrollProgress * 4.2);
-  const heroScale = 1 - scrollProgress * 0.1;
-  // On mobile, skip expensive blur filter entirely
-  const heroBlur = isMobile ? 0 : (scrollProgress < 0.25 ? scrollProgress * 14 : 3);
-
-  const ctaOpacity = Math.max(0, Math.min(1, (scrollProgress - 0.78) * 5));
-  const ctaTranslateY = (1 - ctaOpacity) * 35;
+  }, [requestFrameRender]);
 
   return (
     <div className="relative w-full bg-[#060608]">
@@ -252,9 +258,14 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       <div
         ref={sectionRef}
         className="relative w-full overflow-hidden"
-        style={{ height: '100vh', touchAction: 'pan-y' }}
+        style={{
+          height: '100vh',
+          touchAction: 'pan-y',
+          transform: 'translate3d(0, 0, 0)',
+          backfaceVisibility: 'hidden'
+        }}
       >
-        {/* ── Z-0: Fullscreen Frame Canvas (THE BACKGROUND) ── */}
+        {/* ── Z-0: Fullscreen Frame Canvas (Hardware-Accelerated) ── */}
         <canvas
           ref={canvasRef}
           style={{
@@ -265,7 +276,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             height: '100%',
             display: 'block',
             zIndex: 0,
-            backgroundColor: '#060608'
+            backgroundColor: '#060608',
+            transform: 'translate3d(0, 0, 0)',
+            backfaceVisibility: 'hidden'
           }}
         />
 
@@ -280,8 +293,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           }}
         />
 
-        {/* ── Z-10: Hero Content Overlay (fades out on scroll) ── */}
+        {/* ── Z-10: Hero Content Overlay (Direct DOM-Animated) ── */}
         <div
+          ref={heroOverlayRef}
           className="pt-24 sm:pt-32 pb-8 px-4 sm:px-6"
           style={{
             position: 'absolute',
@@ -292,13 +306,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             alignItems: 'center',
             justifyContent: 'center',
             textAlign: 'center',
-            opacity: heroOpacity,
-            transform: `scale(${heroScale})`,
-            // Skip blur on mobile for better performance
-            filter: heroBlur > 0 ? `blur(${heroBlur}px)` : undefined,
-            pointerEvents: heroOpacity > 0.1 ? 'auto' : 'none',
-            // On mobile, avoid will-change to reduce GPU layer promotion overhead
-            willChange: isMobile ? 'auto' : 'opacity, transform, filter'
+            opacity: 1,
+            transform: 'translate3d(0, 0, 0)',
+            willChange: 'opacity, transform',
+            pointerEvents: 'auto'
           }}
         >
           {/* Main Title */}
@@ -368,8 +379,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           </div>
         </div>
 
-        {/* ── Z-10: End CTA Overlay (fades in near end of scroll) ── */}
+        {/* ── Z-10: End CTA Overlay (Direct DOM-Animated) ── */}
         <div
+          ref={ctaOverlayRef}
           className="pt-20 sm:pt-28 pb-8 px-4 sm:px-6"
           style={{
             position: 'absolute',
@@ -380,10 +392,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             alignItems: 'center',
             justifyContent: 'center',
             textAlign: 'center',
-            opacity: ctaOpacity,
-            transform: `translateY(${ctaTranslateY}px)`,
-            pointerEvents: ctaOpacity > 0.15 ? 'auto' : 'none',
-            willChange: isMobile ? 'auto' : 'opacity, transform'
+            opacity: 0,
+            transform: 'translate3d(0, 35px, 0)',
+            willChange: 'opacity, transform',
+            pointerEvents: 'none'
           }}
         >
           <span
@@ -424,7 +436,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           </div>
         </div>
 
-        {/* ── Z-20: Bottom Progress Bar ── */}
+        {/* ── Z-20: Bottom Progress Bar (Direct DOM-Animated) ── */}
         <div
           style={{
             position: 'absolute',
@@ -438,16 +450,15 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             gap: '0.4rem'
           }}
         >
-          <div
-            className="w-36 sm:w-64 h-[3px] bg-white/10 rounded-full overflow-hidden"
-          >
+          <div className="w-36 sm:w-64 h-[3px] bg-white/10 rounded-full overflow-hidden">
             <div
+              ref={progressBarRef}
               style={{
                 height: '100%',
-                width: `${scrollProgress * 100}%`,
+                width: '0%',
                 background: 'linear-gradient(to right, #f97316, #f59e0b)',
                 borderRadius: '9999px',
-                transition: 'width 0.06s linear'
+                transition: 'width 0.05s linear'
               }}
             />
           </div>
