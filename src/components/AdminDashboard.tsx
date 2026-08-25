@@ -13,10 +13,6 @@ import {
   Lock, 
   RefreshCw, 
   LogOut,
-  Mail,
-  Phone,
-  Building,
-  GraduationCap,
   ArrowLeft
 } from 'lucide-react';
 import { PageView } from './Navbar';
@@ -72,7 +68,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       }
       setAuthError('');
     } else {
-      setAuthError('Incorrect passcode. Please try again.');
+      setAuthError('Incorrect password. Please try again.');
     }
   };
 
@@ -201,49 +197,48 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     });
   };
 
-  const getBadgeStyle = (type: string) => {
+  const getBadgeColor = (type: string) => {
     switch (type) {
-      case 'Delegate': return 'bg-[#00b4d8]/20 text-[#00b4d8] border-[#00b4d8]/40';
-      case 'Delegation': return 'bg-purple-500/20 text-purple-300 border-purple-500/40';
-      case 'Chairboard': return 'bg-amber-500/20 text-amber-400 border-amber-500/40';
-      case 'Admin Staff': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
-      case 'Press Corps': return 'bg-rose-500/20 text-rose-400 border-rose-500/40';
-      default: return 'bg-slate-500/20 text-slate-300 border-slate-500/40';
+      case 'Delegate': return '#aa3bff';
+      case 'Delegation': return '#3b82f6';
+      case 'Chairboard': return '#eab308';
+      case 'Admin Staff': return '#10b981';
+      case 'Press Corps': return '#f43f5e';
+      default: return '#6b7280';
     }
   };
 
   const tabs = [
-    { id: 'all' as TabType, label: 'All Applications', icon: LayoutGrid },
-    { id: 'registrations' as TabType, label: 'Delegates', icon: Users },
-    { id: 'delegations' as TabType, label: 'Delegations', icon: Briefcase },
-    { id: 'chairboard_apps' as TabType, label: 'Chairboard', icon: Award },
-    { id: 'admin_apps' as TabType, label: 'Admin Staff', icon: CheckCircle },
-    { id: 'press_apps' as TabType, label: 'Press Corps', icon: FileText }
+    { id: 'all' as TabType, label: 'ALL', icon: LayoutGrid },
+    { id: 'registrations' as TabType, label: 'DELEGATES', icon: Users },
+    { id: 'delegations' as TabType, label: 'DELEGATIONS', icon: Briefcase },
+    { id: 'chairboard_apps' as TabType, label: 'CHAIRBOARD', icon: Award },
+    { id: 'admin_apps' as TabType, label: 'ADMIN', icon: CheckCircle },
+    { id: 'press_apps' as TabType, label: 'PRESS', icon: FileText }
   ];
 
   // ═══ AUTH LOGIN SCREEN ═══
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen pt-28 sm:pt-36 pb-16 flex items-center justify-center px-4 bg-[#060608] cinematic-grid">
-        <div className="w-full max-w-md p-8 rounded-2xl bg-[#0c0c14]/95 border border-white/12 shadow-2xl backdrop-blur-xl">
-          <div className="flex flex-col items-center text-center mb-6">
-            <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-3">
-              <Lock size={24} />
+      <div className="min-h-screen py-16 flex items-center justify-center px-4 bg-[#0a0f1d]">
+        <div className="w-full max-w-[400px] p-8 sm:p-10 rounded-2xl bg-[#1e293b] border border-[#334155] shadow-2xl text-center">
+          <div className="flex flex-col items-center mb-6">
+            <div className="w-12 h-12 rounded-xl bg-[#0f172a] border border-[#334155] flex items-center justify-center text-[#aa3bff] mb-3">
+              <Lock size={22} />
             </div>
-            <h1 className="text-2xl font-bold text-white font-serif">MSEMUN Secretariat</h1>
-            <p className="text-xs text-slate-400 mt-1">Enter your admin passcode to access registration applications.</p>
+            <h1 className="text-2xl font-bold text-[#f8fafc]">Admin Login</h1>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4 text-left">
             <div>
-              <label className="block text-xs text-slate-300 mb-1.5 font-medium">Passcode</label>
+              <label className="block text-xs uppercase font-bold text-[#aa3bff] mb-2 tracking-wider">Passcode</label>
               <input
                 type="password"
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                placeholder="Enter passcode (e.g. msemun2026)"
+                placeholder="Enter admin passcode"
                 autoFocus
-                className="w-full px-4 py-2.5 rounded-lg bg-black/50 border border-white/15 text-sm text-white focus:outline-none focus:border-amber-400"
+                className="w-full px-4 py-3 rounded-lg bg-[#0f172a] border border-[#475569] text-sm text-[#f8fafc] focus:outline-none focus:border-[#aa3bff] focus:ring-2 focus:ring-[#aa3bff]/25 transition-all"
               />
             </div>
 
@@ -253,9 +248,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
 
             <button
               type="submit"
-              className="btn-primary w-full text-sm !py-3 font-semibold cursor-pointer"
+              className="w-full py-3 rounded-lg bg-[#aa3bff] hover:bg-[#9333ea] text-white text-sm font-bold shadow-lg shadow-[#aa3bff]/30 transition-all cursor-pointer mt-2"
             >
-              Sign In to Dashboard
+              Login
             </button>
           </form>
         </div>
@@ -263,28 +258,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     );
   }
 
-  // ═══ MAIN DASHBOARD VIEW ═══
+  // ═══ MAIN DASHBOARD (EXACT ALAÇATIMUN AESTHETIC) ═══
   return (
-    <div className="min-h-screen pt-24 sm:pt-28 pb-16 px-4 sm:px-6 md:px-8 bg-[#060608] cinematic-grid">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen py-8 px-4 sm:px-6 md:px-8 bg-[#0a0f1d] text-[#e2e8f0] font-sans">
+      <div className="max-w-[1200px] mx-auto p-6 sm:p-10 rounded-[20px] bg-[#0f172a] border border-[#1e293b] shadow-2xl space-y-7">
         
-        {/* Top Header Bar */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-white/10">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-[#1e293b]">
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-amber-400/20 text-amber-300 border border-amber-400/30">
-                Secretariat Portal
-              </span>
-              <span className="text-xs text-slate-400 font-mono">MSEMUN '26</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white font-serif tracking-tight">Applications Management</h1>
+            <h1 className="text-3xl font-extrabold text-[#f8fafc] tracking-tight">Dashboard</h1>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-3">
             {onNavigate && (
               <button
                 onClick={() => onNavigate('home')}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-slate-300 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#1e293b] hover:bg-[#334155] border border-[#334155] text-xs font-semibold text-[#cbd5e1] hover:text-[#f8fafc] transition-all cursor-pointer"
               >
                 <ArrowLeft size={14} />
                 <span>Return to Website</span>
@@ -294,15 +283,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
             <button
               onClick={fetchAllData}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-slate-300 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#1e293b] hover:bg-[#334155] border border-[#334155] text-xs font-semibold text-[#cbd5e1] hover:text-[#f8fafc] transition-all cursor-pointer"
             >
-              <RefreshCw size={14} className={loading ? 'animate-spin text-amber-400' : ''} />
+              <RefreshCw size={14} className={loading ? 'animate-spin text-[#aa3bff]' : ''} />
               <span>Refresh</span>
             </button>
 
             <button
               onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-xs text-red-400 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#1e293b] hover:bg-[#334155] border border-[#334155] text-xs font-semibold text-[#cbd5e1] hover:text-[#f8fafc] transition-all cursor-pointer"
             >
               <LogOut size={14} />
               <span>Logout</span>
@@ -310,8 +299,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
           </div>
         </div>
 
-        {/* Metrics Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {/* Metric Cards matching AlaçatıMUN screenshot */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const count = tab.id === 'all'
@@ -326,106 +315,145 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                   setActiveTab(tab.id);
                   setSearchQuery('');
                 }}
-                className={`p-3.5 sm:p-4 rounded-xl border transition-all cursor-pointer select-none ${
+                className={`p-4 rounded-[14px] border transition-all cursor-pointer flex items-center gap-3.5 select-none ${
                   isActive 
-                    ? 'bg-[#131320] border-amber-400/60 shadow-lg shadow-amber-500/10 scale-[1.02]' 
-                    : 'bg-[#0c0c14]/80 border-white/10 hover:border-white/20 hover:bg-white/5'
+                    ? 'bg-[#242b44] border-[#aa3bff] shadow-lg shadow-[#aa3bff]/20 scale-[1.02]' 
+                    : 'bg-[#1e293b] border-[#334155] hover:bg-[#273549] hover:border-[#475569]'
                 }`}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <Icon size={18} className={isActive ? 'text-amber-400' : 'text-slate-400'} />
-                  <span className={`text-sm font-mono font-bold ${isActive ? 'text-amber-300' : 'text-slate-300'}`}>
-                    {count}
-                  </span>
+                <div 
+                  className={`w-11 h-11 rounded-[10px] flex items-center justify-center shrink-0 border transition-colors ${
+                    isActive 
+                      ? 'bg-[#aa3bff] text-white border-[#aa3bff]' 
+                      : 'bg-[#0f172a] text-[#aa3bff] border-[#1e293b]'
+                  }`}
+                >
+                  <Icon size={20} />
                 </div>
-                <div className={`text-xs font-medium truncate ${isActive ? 'text-white font-semibold' : 'text-slate-400'}`}>
-                  {tab.label}
+                <div className="flex flex-col min-w-0">
+                  <span className="text-2xl font-bold text-[#f8fafc] leading-tight">
+                    {loading ? '...' : count}
+                  </span>
+                  <span className="text-[11px] font-semibold text-[#94a3b8] tracking-wider uppercase truncate">
+                    {tab.label}
+                  </span>
                 </div>
               </div>
             );
           })}
         </div>
 
+        {/* Tabs Bar */}
+        <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setSearchQuery('');
+                }}
+                className={`px-5 py-2.5 rounded-[10px] border text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
+                  isActive
+                    ? 'bg-[#aa3bff] text-white border-[#aa3bff] shadow-md shadow-[#aa3bff]/30'
+                    : 'bg-[#1e293b] text-[#94a3b8] border-[#334155] hover:bg-[#334155] hover:text-[#f1f5f9]'
+                }`}
+              >
+                <Icon size={16} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* Actions Bar (Search + Export) */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#0c0c14]/90 p-3.5 rounded-xl border border-white/10">
-          <div className="relative w-full sm:w-80">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#1e293b] p-3.5 rounded-[12px] border border-[#334155]">
+          <div className="relative w-full sm:w-96">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
             <input
               type="text"
               placeholder="Search by name, school, delegation..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[#0f172a] border border-[#334155] text-xs text-[#f8fafc] placeholder-[#64748b] focus:outline-none focus:border-[#aa3bff]"
             />
           </div>
 
           <button
             onClick={exportToCSV}
             disabled={filteredData.length === 0}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-xs text-white transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-[#aa3bff]/15 text-[#c084fc] hover:bg-[#aa3bff] hover:text-white border border-[#aa3bff]/30 text-xs font-semibold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Download size={14} />
-            <span>Export to CSV ({filteredData.length})</span>
+            <Download size={15} />
+            <span>Export CSV ({filteredData.length})</span>
           </button>
         </div>
 
         {/* Applications Table */}
-        <div className="rounded-xl bg-[#0c0c14]/90 border border-white/10 overflow-hidden shadow-2xl">
+        <div className="rounded-[14px] bg-[#1e293b] border border-[#334155] overflow-hidden shadow-lg">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse min-w-[760px]">
-              <thead className="bg-black/60 border-b border-white/10 text-slate-400 font-mono uppercase text-[11px]">
-                <tr>
-                  <th className="px-4 py-3.5 font-semibold w-28">Role</th>
-                  <th className="px-4 py-3.5 font-semibold w-48">Applicant Name</th>
-                  <th className="px-4 py-3.5 font-semibold w-44">School</th>
-                  <th className="px-4 py-3.5 font-semibold w-48">Contact Email</th>
-                  <th className="px-4 py-3.5 font-semibold w-36">Phone</th>
-                  <th className="px-4 py-3.5 font-semibold text-right w-36">Submission Date</th>
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-[#0f172a] border-b-2 border-[#1e293b] text-[#94a3b8] uppercase font-bold text-[11px] tracking-wider">
+                  <th className="px-5 py-3.5">Type</th>
+                  <th className="px-5 py-3.5">Name</th>
+                  <th className="px-5 py-3.5">School</th>
+                  <th className="px-5 py-3.5">Email</th>
+                  <th className="px-5 py-3.5">Phone</th>
+                  <th className="px-5 py-3.5 text-right">Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5 text-slate-300">
+              <tbody className="divide-y divide-[#334155]">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-16 text-center text-slate-400 font-mono">
+                    <td colSpan={6} className="px-5 py-14 text-center text-[#94a3b8] italic">
                       <div className="inline-flex items-center gap-2">
-                        <RefreshCw size={16} className="animate-spin text-amber-400" />
-                        <span>Loading applications from Supabase...</span>
+                        <RefreshCw size={16} className="animate-spin text-[#aa3bff]" />
+                        <span>Loading applications...</span>
                       </div>
                     </td>
                   </tr>
                 ) : filteredData.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-16 text-center text-slate-400">
-                      {searchQuery ? 'No applications match your search query.' : 'No applications received in this category yet.'}
+                    <td colSpan={6} className="px-5 py-14 text-center text-[#64748b] italic">
+                      {searchQuery ? 'No results found.' : 'No applications yet.'}
                     </td>
                   </tr>
                 ) : (
                   filteredData.map((item: any) => (
                     <tr
-                      key={item.id}
+                      key={`${item.app_type}-${item.id}`}
                       onClick={() => setSelectedItem(item)}
-                      className="hover:bg-white/5 transition-colors cursor-pointer group"
+                      className="hover:bg-[#273549] text-[#cbd5e1] hover:text-[#f8fafc] transition-all cursor-pointer"
                     >
-                      <td className="px-4 py-3">
-                        <span className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold border ${getBadgeStyle(item.app_type)}`}>
+                      <td className="px-5 py-3.5">
+                        <span 
+                          style={{ background: getBadgeColor(item.app_type) }}
+                          className="text-white px-2.5 py-1 rounded-[6px] text-[11px] font-bold inline-block"
+                        >
                           {item.app_type}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-medium text-white group-hover:text-amber-300 transition-colors">
+                      <td className="px-5 py-3.5 font-medium text-white">
                         {item.delegation_name ? (
                           <div>
                             <div className="font-semibold">{item.delegation_name}</div>
-                            <div className="text-[11px] text-slate-400 font-normal">{item.full_name} (Head Delegate)</div>
+                            <div className="text-[11px] text-[#94a3b8] font-normal">{item.full_name} (Advisor)</div>
                           </div>
                         ) : (
                           item.full_name
                         )}
                       </td>
-                      <td className="px-4 py-3 text-slate-300 truncate max-w-[180px]">{item.school}</td>
-                      <td className="px-4 py-3 text-slate-300 font-mono text-[11px] truncate max-w-[200px]">{item.email}</td>
-                      <td className="px-4 py-3 text-slate-300 font-mono text-[11px]">{item.phone || '—'}</td>
-                      <td className="px-4 py-3 text-right font-mono text-slate-400 text-[11px]">
-                        {formatDate(item.created_at)}
+                      <td className="px-5 py-3.5 text-[#cbd5e1]">{item.school}</td>
+                      <td className="px-5 py-3.5 text-[#cbd5e1]">{item.email}</td>
+                      <td className="px-5 py-3.5 text-[#cbd5e1]">{item.phone || '—'}</td>
+                      <td className="px-5 py-3.5 text-right">
+                        <span className="bg-[#0f172a] text-[#94a3b8] border border-[#1e293b] px-2 py-1 rounded-[6px] text-[11px] font-mono">
+                          {formatDate(item.created_at)}
+                        </span>
                       </td>
                     </tr>
                   ))
@@ -437,159 +465,118 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
 
       </div>
 
-      {/* ═══ APPLICATION DETAIL MODAL (FIXED HEADER & RESPONSIVE TEXT BREAKING) ═══ */}
+      {/* ═══ APPLICATION DETAILS MODAL (EXACT ALAÇATIMUN LAYOUT) ═══ */}
       {selectedItem && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md overflow-hidden"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0f172a]/80 backdrop-blur-sm"
           onClick={() => setSelectedItem(null)}
         >
           <div 
-            className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl bg-[#0c0c14] border border-white/20 shadow-2xl overflow-hidden"
+            className="relative w-full max-w-[750px] max-h-[85vh] flex flex-col rounded-[16px] bg-[#1e293b] border border-[#334155] shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Sticky Fixed Modal Header */}
-            <div className="flex items-start justify-between p-5 sm:p-6 border-b border-white/10 bg-[#0f0f1c] shrink-0">
-              <div>
-                <span className={`inline-block px-2.5 py-0.5 rounded text-xs font-semibold border mb-2 ${getBadgeStyle(selectedItem.app_type)}`}>
-                  {selectedItem.app_type}
-                </span>
-                <h2 className="text-xl sm:text-2xl font-bold text-white font-serif break-words">
-                  {selectedItem.delegation_name || selectedItem.full_name}
-                </h2>
-                <p className="text-xs text-slate-400 font-mono mt-1">
-                  Submitted on {formatDate(selectedItem.created_at)}
-                </p>
-              </div>
-
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 sm:px-8 py-5 border-b border-[#334155] bg-[#0f172a] shrink-0">
+              <h2 className="text-xl font-bold text-[#f8fafc]">Application Details</h2>
               <button
                 onClick={() => setSelectedItem(null)}
-                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer shrink-0 ml-4"
+                className="w-8 h-8 rounded-full bg-[#1e293b] hover:bg-[#ef4444] border border-[#334155] hover:border-[#ef4444] text-[#94a3b8] hover:text-white flex items-center justify-center transition-all cursor-pointer"
                 title="Close"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            {/* Scrollable Modal Body with Guaranteed Text Wrapping */}
-            <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-5 text-xs text-slate-300">
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-5">
               
-              {/* Quick Info Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-xl bg-black/40 border border-white/10">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Mail size={16} className="text-amber-400 shrink-0" />
-                  <div className="min-w-0">
-                    <div className="text-[10px] uppercase font-mono text-slate-500">Email</div>
-                    <a href={`mailto:${selectedItem.email}`} className="text-slate-200 hover:text-amber-400 hover:underline break-all block">
-                      {selectedItem.email}
-                    </a>
-                  </div>
+              {/* Basic Info Card (2 Columns) */}
+              <div className="bg-[#0f172a] p-5 rounded-[12px] border border-[#1e293b] grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[11px] uppercase font-bold text-[#aa3bff] tracking-wider">Full Name</span>
+                  <span className="text-sm font-semibold text-[#f8fafc]">{selectedItem.full_name}</span>
                 </div>
 
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Phone size={16} className="text-amber-400 shrink-0" />
-                  <div className="min-w-0">
-                    <div className="text-[10px] uppercase font-mono text-slate-500">Phone</div>
-                    <a href={`tel:${selectedItem.phone}`} className="text-slate-200 hover:text-amber-400 hover:underline block">
-                      {selectedItem.phone || '—'}
-                    </a>
-                  </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[11px] uppercase font-bold text-[#aa3bff] tracking-wider">Date</span>
+                  <span className="text-sm text-[#cbd5e1]">{formatDate(selectedItem.created_at)}</span>
                 </div>
 
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Building size={16} className="text-amber-400 shrink-0" />
-                  <div className="min-w-0">
-                    <div className="text-[10px] uppercase font-mono text-slate-500">School / Institution</div>
-                    <div className="text-white font-medium break-words">{selectedItem.school}</div>
-                  </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[11px] uppercase font-bold text-[#aa3bff] tracking-wider">Email</span>
+                  <a href={`mailto:${selectedItem.email}`} className="text-sm text-[#00b4d8] hover:underline break-all">
+                    {selectedItem.email}
+                  </a>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <span className="text-[11px] uppercase font-bold text-[#aa3bff] tracking-wider">Phone</span>
+                  <a href={`tel:${selectedItem.phone}`} className="text-sm text-[#00b4d8] hover:underline">
+                    {selectedItem.phone || '—'}
+                  </a>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <span className="text-[11px] uppercase font-bold text-[#aa3bff] tracking-wider">School</span>
+                  <span className="text-sm text-[#cbd5e1]">{selectedItem.school}</span>
                 </div>
 
                 {selectedItem.grade && (
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <GraduationCap size={16} className="text-amber-400 shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-[10px] uppercase font-mono text-slate-500">Grade</div>
-                      <div className="text-white font-medium">{selectedItem.grade}</div>
-                    </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[11px] uppercase font-bold text-[#aa3bff] tracking-wider">Grade</span>
+                    <span className="text-sm text-[#cbd5e1]">{selectedItem.grade}</span>
                   </div>
                 )}
               </div>
 
-              {/* Committee Preferences */}
-              {(selectedItem.committee_preference_1 || selectedItem.pref1) && (
-                <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2.5">
-                  <h3 className="text-xs uppercase font-mono font-bold text-amber-400">Committee Preferences</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                    <div className="p-2.5 rounded-lg bg-white/5 border border-white/10">
-                      <span className="text-[10px] text-slate-400 font-mono block mb-0.5">1st Choice</span>
-                      <span className="font-semibold text-white uppercase break-words">{selectedItem.committee_preference_1 || selectedItem.pref1}</span>
-                    </div>
-                    <div className="p-2.5 rounded-lg bg-white/5 border border-white/10">
-                      <span className="text-[10px] text-slate-400 font-mono block mb-0.5">2nd Choice</span>
-                      <span className="font-semibold text-white uppercase break-words">{selectedItem.committee_preference_2 || selectedItem.pref2 || '—'}</span>
-                    </div>
-                    <div className="p-2.5 rounded-lg bg-white/5 border border-white/10">
-                      <span className="text-[10px] text-slate-400 font-mono block mb-0.5">3rd Choice</span>
-                      <span className="font-semibold text-white uppercase break-words">{selectedItem.committee_preference_3 || selectedItem.pref3 || '—'}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Detailed Dynamic Answers with Overflow Fix */}
+              {/* Dynamic Specific Fields matching screenshot */}
               {Object.entries(selectedItem).map(([key, value]) => {
-                if ([
-                  'id', 'created_at', 'full_name', 'email', 'phone', 'school', 'grade', 
-                  'app_type', 'committee_preference_1', 'committee_preference_2', 
-                  'committee_preference_3', 'pref1', 'pref2', 'pref3'
-                ].includes(key)) return null;
+                if (['id', 'created_at', 'full_name', 'email', 'phone', 'school', 'grade'].includes(key)) return null;
+                if (value === null || value === '') return null;
 
-                if (!value || value === '') return null;
-
-                const customTitles: Record<string, string> = {
-                  exp_list: 'MUN Experience',
-                  org_exp_list: 'Organization / Publication Experience',
-                  motivation_letter: 'Motivation Letter',
-                  q_ai_suspicion: 'Q: Delegate AI Suspicion Handling',
-                  q_final_documents: 'Q: Final Documents Details',
-                  q_directive_help: 'Q: Directive Writing Assistance (Crisis)',
-                  q_resolution_paper: 'Q: Resolution Paper Time Management (GA)',
-                  q_disagreement: 'Q: Chairboard Procedural Disagreement',
-                  crisis_directive: 'Sample Crisis Directive',
-                  ga_procedure: 'GA Procedure Walkthrough',
-                  camera_model: 'Camera Equipment / Model',
-                  expected_members: 'Expected Member Count',
-                  all_emails: 'All Delegation Member Emails',
-                  all_phones: 'All Delegation Member Phone Numbers',
-                  references: 'References',
-                  references_text: 'References',
-                  message: 'Additional Message',
-                  status: 'Application Status'
+                const customLabels: Record<string, string> = {
+                  exp_list: 'EXP LIST',
+                  org_exp_list: 'ORGANIZATION / PUBLICATION EXPERIENCE',
+                  committee_preference_1: 'COMMITTEE PREFERENCE 1',
+                  committee_preference_2: 'COMMITTEE PREFERENCE 2',
+                  committee_preference_3: 'COMMITTEE PREFERENCE 3',
+                  pref1: 'COMMITTEE PREFERENCE 1',
+                  pref2: 'COMMITTEE PREFERENCE 2',
+                  pref3: 'COMMITTEE PREFERENCE 3',
+                  motivation_letter: 'MOTIVATION LETTER',
+                  q_ai_suspicion: 'Q: DELEGATE AI SUSPICION',
+                  q_final_documents: 'Q: FINAL DOCUMENTS',
+                  q_directive_help: 'Q: DIRECTIVE HELP (CRISIS)',
+                  q_resolution_paper: 'Q: RESOLUTION PAPER (GA)',
+                  q_disagreement: 'Q: CHAIRBOARD DISAGREEMENT',
+                  crisis_directive: 'SAMPLE CRISIS DIRECTIVE',
+                  ga_procedure: 'GA PROCEDURE',
+                  camera_model: 'CAMERA BRAND / MODEL',
+                  expected_members: 'EXPECTED MEMBERS',
+                  all_emails: 'ALL MEMBER EMAILS',
+                  all_phones: 'ALL MEMBER PHONE NUMBERS',
+                  references: 'REFERENCES',
+                  references_text: 'REFERENCES',
+                  message: 'ADDITIONAL MESSAGE',
+                  status: 'APPLICATION STATUS',
+                  app_type: 'APPLICATION TYPE'
                 };
 
-                const title = customTitles[key] || key.replace(/_/g, ' ').toUpperCase();
+                const formattedKey = customLabels[key] || key.replace(/_/g, ' ').toUpperCase();
 
                 return (
-                  <div key={key} className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-1.5 overflow-hidden">
-                    <h4 className="text-[11px] font-mono uppercase font-bold text-amber-400">{title}</h4>
-                    <p className="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed break-words break-all [overflow-wrap:anywhere] max-w-full">
+                  <div key={key} className="flex flex-col gap-1.5">
+                    <span className="text-[11px] uppercase font-bold text-[#aa3bff] tracking-wider">
+                      {formattedKey}
+                    </span>
+                    <div className="bg-[#0f172a] text-[#f1f5f9] text-sm leading-relaxed p-4 rounded-[8px] border border-[#1e293b] whitespace-pre-wrap break-words break-all [overflow-wrap:anywhere]">
                       {String(value)}
-                    </p>
+                    </div>
                   </div>
                 );
               })}
 
             </div>
-
-            {/* Modal Footer */}
-            <div className="p-4 border-t border-white/10 bg-[#0f0f1c] flex items-center justify-end">
-              <button
-                onClick={() => setSelectedItem(null)}
-                className="px-5 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-xs text-white transition-colors cursor-pointer"
-              >
-                Close Window
-              </button>
-            </div>
-
           </div>
         </div>
       )}
@@ -597,3 +584,5 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     </div>
   );
 };
+
+export default AdminDashboard;
