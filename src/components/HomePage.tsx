@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ArrowRight, Shield } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { PageView } from './Navbar';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -386,7 +386,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
 
           {/* Scroll Prompt */}
           <div className="mt-6 sm:mt-10 flex flex-col items-center gap-1 text-[10px] sm:text-[11px] font-mono tracking-widest text-slate-400 uppercase animate-bounce">
-            <span>SCROLL DOWN</span>
+            <span>SCROLL DOWN FOR APPLY</span>
             <span className="text-amber-400 text-sm sm:text-base">↓</span>
           </div>
         </div>
@@ -426,24 +426,17 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             className="max-w-lg text-xs sm:text-base text-slate-200 font-sans mb-6 sm:mb-10 leading-relaxed px-2"
             style={{ textShadow: '0 2px 10px rgba(0,0,0,0.9)' }}
           >
-            Explore our six specialized crisis and General Assembly chambers or submit your
+            Explore our specialized crisis and General Assembly chambers or submit your
             direct delegate accreditation.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full sm:w-auto max-w-xs sm:max-w-none">
-            <button
-              onClick={() => onNavigate('committees')}
-              className="btn-secondary text-xs !py-3 sm:!py-3.5 !px-6 sm:!px-8 w-full sm:w-auto"
-            >
-              <Shield className="w-4 h-4 text-amber-400" />
-              <span>EXPLORE 6 COMMITTEES</span>
-            </button>
+          <div className="flex items-center justify-center w-full sm:w-auto">
             <button
               onClick={() => onNavigate('apply')}
-              className="btn-primary text-xs !py-3 sm:!py-3.5 !px-6 sm:!px-8 w-full sm:w-auto"
+              className="btn-primary text-xs sm:text-sm !py-3.5 sm:!py-4 !px-8 sm:!px-10 !rounded-xl shadow-[0_0_30px_rgba(255,106,0,0.4)]"
             >
               <span>APPLY AS DELEGATE</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 ml-1" />
             </button>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FlameLogo } from './FlameLogo';
-import { Menu, X, ArrowRight } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 export type PageView = 'home' | 'committees' | 'apply';
 
@@ -96,26 +96,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
                   );
                 })}
               </div>
-
-              {/* Right CTA button */}
-              {currentPage !== 'apply' ? (
-                <button
-                  onClick={() => handleNavClick('apply')}
-                  className="btn-primary text-xs !py-2.5 !px-5 !rounded-lg"
-                  style={{ marginLeft: '1rem' }}
-                >
-                  <span>APPLY NOW</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleNavClick('committees')}
-                  className="btn-secondary text-xs !py-2.5 !px-5 !rounded-lg"
-                  style={{ marginLeft: '1rem' }}
-                >
-                  <span>VIEW COMMITTEES</span>
-                </button>
-              )}
             </nav>
 
             {/* Mobile Toggle Button */}
