@@ -63,6 +63,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     e.preventDefault();
     const correctPassword = import.meta.env.VITE_ADMIN_PASSWORD;
 
+    if (!correctPassword) {
+      setAuthError('Admin password is not set in .env file (VITE_ADMIN_PASSWORD). Please restart Vite dev server after setting it.');
+      return;
+    }
+
     if (passwordInput === correctPassword) {
       setIsAuthenticated(true);
       try {
