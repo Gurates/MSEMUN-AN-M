@@ -32,12 +32,14 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
     setMobileMenuOpen(false);
   };
 
+  const isSolid = scrolled || currentPage !== 'home';
+
   return (
     <>
       <header
         className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-          scrolled
-            ? 'py-3.5 bg-[#060608]/92 backdrop-blur-md border-b border-white/10 shadow-lg shadow-black/80'
+          isSolid
+            ? 'py-3.5 bg-[#060608]/96 backdrop-blur-md border-b border-white/10 shadow-lg shadow-black/80'
             : 'py-5 bg-transparent'
         }`}
       >
