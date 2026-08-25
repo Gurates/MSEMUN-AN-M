@@ -298,4 +298,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
         </div>
 
       </div>
- 
+    </div>
+  );
+};
