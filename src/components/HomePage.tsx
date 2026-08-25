@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ArrowRight, Shield } from 'lucide-react';
@@ -6,10 +6,19 @@ import { PageView } from './Navbar';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const TOTAL_FRAMES = 240;
+// ── Mobile Detection Utility ──
+const getIsMobile = () => window.matchMedia('(max-width: 768px)').matches;
 
-const getFramePath = (index: number) => {
-  const frameNum = String(index + 1).padStart(3, '0');
+// ── Frame Configuration (adaptive per device) ──
+const DESKTOP_TOTAL_FRAMES = 240;
+const MOBILE_FRAME_STEP = 3;   // Load every 3rd frame on mobile → 80 frames
+const MOBILE_TOTAL_FRAMES = Math.ceil(DESKTOP_TOTAL_FRAMES / MOBILE_FRAME_STEP); // 80
+
+/** Returns the original asset path for a given LOGICAL index (0-based) */
+const getFramePath = (logicalIndex: number, isMobile: boolean) => {
+  // On mobile, map logical index back to the original frame number
+  const originalIndex = isMobile ? logicalIndex * MOBILE_FRAME_STEP : logicalIndex;
+  const frameNum = String(Math.min(originalIndex + 1, DESKTOP_TOTAL_FRAMES)).padStart(3, '0');
   return `/images/ezgif-frame-${frameNum}-2x.jpg`;
 };
 
@@ -22,8 +31,14 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imagesRef = useRef<HTMLImageElement[]>([]);
   const currentFrameRef = useRef<number>(0);
+  const rafIdRef = useRef<number>(0);
+
+  // Detect mobile once on mount (avoids re-detection on every frame)
+  const isMobile = useMemo(() => getIsMobile(), []);
+  const totalFrames = isMobile ? MOBILE_TOTAL_FRAMES : DESKTOP_TOTAL_FRAMES;
 
   const [scrollProgress, setScrollProgress] = useState<number>(0);
+  const scrollProgressRef = useRef<number>(0);
   const [timeLeft, setTimeLeft] = useState({
     days: 30,
     hours: 0,
@@ -85,60 +100,39 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     const iw = img.naturalWidth;
     const ih = img.naturalHeight;
 
-    const isPortrait = cw < ch;
-    let scale: number;
-    let sx: number;
-    let sy: number;
-    let sw: number;
-    let sh: number;
-
-    if (isPortrait) {
-      // Mobile / Portrait: Scale proportionally so the entire emblem, flame & wreath fit comfortably
-      const targetEmblemWidth = cw * 0.92;
-      const emblemRatioInImage = 0.62; // The emblem occupies ~62% of the 16:9 frame width
-      const widthScale = targetEmblemWidth / (iw * emblemRatioInImage);
-      const heightScale = (ch * 0.72) / ih;
-      scale = Math.min(widthScale, heightScale);
-
-      sw = iw * scale;
-      sh = ih * scale;
-      sx = (cw - sw) / 2;
-      // Slight vertical offset so emblem is centered below navbar
-      sy = (ch - sh) / 2 + (ch * 0.025);
-    } else {
-      // Desktop / Landscape: Cover mode
-      scale = Math.max(cw / iw, ch / ih);
-      sw = iw * scale;
-      sh = ih * scale;
-      sx = (cw - sw) / 2;
-      sy = (ch - sh) / 2;
-    }
+    // Object-fit: cover — scales up to fill, crops overflow, preserves aspect ratio
+    const scale = Math.max(cw / iw, ch / ih);
+    const sw = iw * scale;
+    const sh = ih * scale;
+    const sx = (cw - sw) / 2;
+    const sy = (ch - sh) / 2;
 
     ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.fillStyle = '#060608';
-    ctx.fillRect(0, 0, cw, ch);
+    // On mobile, use faster smoothing to reduce GPU load
+    ctx.imageSmoothingQuality = isMobile ? 'medium' : 'high';
+    ctx.clearRect(0, 0, cw, ch);
     ctx.drawImage(img, 0, 0, iw, ih, sx, sy, sw, sh);
-  }, []);
+  }, [isMobile]);
 
   // ── Size the canvas pixel buffer to match viewport × DPR ──
   const sizeCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // Mobile: cap DPR at 1 to save massive GPU/memory overhead
+    const dpr = isMobile ? 1 : Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = window.innerWidth * dpr;
     canvas.height = window.innerHeight * dpr;
     drawFrame(currentFrameRef.current);
-  }, [drawFrame]);
+  }, [drawFrame, isMobile]);
 
   // ── Smart Progressive Chunked Preloading (Bandwidth-Friendly) ──
   useEffect(() => {
-    const images: HTMLImageElement[] = new Array(TOTAL_FRAMES);
+    const images: HTMLImageElement[] = new Array(totalFrames);
     imagesRef.current = images;
 
     // 1. High priority: Load 1st frame immediately so hero background appears with 0 delay
     const firstImg = new Image();
-    firstImg.src = getFramePath(0);
+    firstImg.src = getFramePath(0, isMobile);
     firstImg.onload = () => {
       images[0] = firstImg;
       sizeCanvas();
@@ -146,18 +140,21 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     };
     images[0] = firstImg;
 
-    // 2. Progressive background loading: Load remaining frames in batches of 4 with delays
+    // 2. Progressive background loading
+    // Desktop: batches of 4 every 35ms
+    // Mobile:  batches of 2 every 60ms (gentler on bandwidth + CPU)
     let currentBatch = 1;
-    const BATCH_SIZE = 4;
+    const BATCH_SIZE = isMobile ? 2 : 4;
+    const BATCH_DELAY = isMobile ? 60 : 35;
     let isCancelled = false;
 
     const loadNextBatch = () => {
-      if (isCancelled || currentBatch >= TOTAL_FRAMES) return;
+      if (isCancelled || currentBatch >= totalFrames) return;
 
-      const end = Math.min(currentBatch + BATCH_SIZE, TOTAL_FRAMES);
+      const end = Math.min(currentBatch + BATCH_SIZE, totalFrames);
       for (let i = currentBatch; i < end; i++) {
         const img = new Image();
-        img.src = getFramePath(i);
+        img.src = getFramePath(i, isMobile);
         img.onload = () => {
           images[i] = img;
         };
@@ -165,28 +162,42 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       }
       currentBatch = end;
 
-      if (currentBatch < TOTAL_FRAMES) {
-        setTimeout(loadNextBatch, 35);
+      if (currentBatch < totalFrames) {
+        setTimeout(loadNextBatch, BATCH_DELAY);
       }
     };
 
     // Give browser initial quiet window so video intro buffers at full bandwidth
     const timer = setTimeout(() => {
       loadNextBatch();
-    }, 250);
+    }, isMobile ? 500 : 250);
 
     return () => {
       isCancelled = true;
       clearTimeout(timer);
     };
-  }, [drawFrame, sizeCanvas]);
+  }, [drawFrame, sizeCanvas, totalFrames, isMobile]);
 
-  // ── Resize canvas on window resize ──
+  // ── Resize canvas on window resize (debounced on mobile) ──
   useEffect(() => {
-    window.addEventListener('resize', sizeCanvas);
-    sizeCanvas();
-    return () => window.removeEventListener('resize', sizeCanvas);
-  }, [sizeCanvas]);
+    if (isMobile) {
+      let resizeTimer: ReturnType<typeof setTimeout>;
+      const debouncedResize = () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(sizeCanvas, 150);
+      };
+      window.addEventListener('resize', debouncedResize);
+      sizeCanvas();
+      return () => {
+        window.removeEventListener('resize', debouncedResize);
+        clearTimeout(resizeTimer);
+      };
+    } else {
+      window.addEventListener('resize', sizeCanvas);
+      sizeCanvas();
+      return () => window.removeEventListener('resize', sizeCanvas);
+    }
+  }, [sizeCanvas, isMobile]);
 
   // ── GSAP ScrollTrigger — pin the section & scrub through frames ──
   useEffect(() => {
@@ -197,29 +208,39 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       ScrollTrigger.create({
         trigger: section,
         start: 'top top',
-        end: () => (window.innerWidth < 768 ? '+=2400' : '+=3800'),
+        end: () => (isMobile ? '+=2400' : '+=3800'),
         pin: true,
-        scrub: 0.35,
+        // Mobile: slower scrub = smoother feeling with fewer frames
+        scrub: isMobile ? 0.6 : 0.35,
         onUpdate: (self) => {
           const progress = self.progress;
-          const idx = Math.min(TOTAL_FRAMES - 1, Math.max(0, Math.round(progress * (TOTAL_FRAMES - 1))));
+          const idx = Math.min(totalFrames - 1, Math.max(0, Math.round(progress * (totalFrames - 1))));
 
           if (idx !== currentFrameRef.current) {
             currentFrameRef.current = idx;
-            requestAnimationFrame(() => drawFrame(idx));
+            // Cancel previous pending RAF to avoid stacking
+            cancelAnimationFrame(rafIdRef.current);
+            rafIdRef.current = requestAnimationFrame(() => drawFrame(idx));
           }
-          setScrollProgress(progress);
+
+          // Throttle React state updates: only update if progress changed meaningfully
+          // This prevents 60+ setState calls per second during fast scrolling
+          if (Math.abs(progress - scrollProgressRef.current) > 0.005) {
+            scrollProgressRef.current = progress;
+            setScrollProgress(progress);
+          }
         }
       });
     }, section);
 
     return () => ctx.revert();
-  }, [drawFrame]);
+  }, [drawFrame, totalFrames, isMobile]);
 
   // ── UI layer opacity/transforms synced to scroll progress ──
   const heroOpacity = Math.max(0, 1 - scrollProgress * 4.2);
   const heroScale = 1 - scrollProgress * 0.1;
-  const heroBlur = scrollProgress < 0.25 ? scrollProgress * 14 : 3;
+  // On mobile, skip expensive blur filter entirely
+  const heroBlur = isMobile ? 0 : (scrollProgress < 0.25 ? scrollProgress * 14 : 3);
 
   const ctaOpacity = Math.max(0, Math.min(1, (scrollProgress - 0.78) * 5));
   const ctaTranslateY = (1 - ctaOpacity) * 35;
@@ -273,9 +294,11 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             textAlign: 'center',
             opacity: heroOpacity,
             transform: `scale(${heroScale})`,
-            filter: `blur(${heroBlur}px)`,
+            // Skip blur on mobile for better performance
+            filter: heroBlur > 0 ? `blur(${heroBlur}px)` : undefined,
             pointerEvents: heroOpacity > 0.1 ? 'auto' : 'none',
-            willChange: 'opacity, transform, filter'
+            // On mobile, avoid will-change to reduce GPU layer promotion overhead
+            willChange: isMobile ? 'auto' : 'opacity, transform, filter'
           }}
         >
           {/* Main Title */}
@@ -360,7 +383,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             opacity: ctaOpacity,
             transform: `translateY(${ctaTranslateY}px)`,
             pointerEvents: ctaOpacity > 0.15 ? 'auto' : 'none',
-            willChange: 'opacity, transform'
+            willChange: isMobile ? 'auto' : 'opacity, transform'
           }}
         >
           <span
