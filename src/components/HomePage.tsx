@@ -59,7 +59,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const minutesDigits = String(timeLeft.minutes).padStart(2, '0').split('');
   const secondsDigits = String(timeLeft.seconds).padStart(2, '0').split('');
 
-  // ── Draw a frame on the canvas with smart mobile contain vs desktop cover ──
+  // ── Draw a frame on the canvas with fallback to nearest loaded frame ──
   const drawFrame = useCallback((index: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -85,23 +85,39 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     const iw = img.naturalWidth;
     const ih = img.naturalHeight;
 
-    // On portrait mobile (cw < ch): Use contain scaling so the entire 3D emblem and wreaths fit cleanly!
-    // On landscape desktop: Use cover scaling to fill the widescreen display.
     const isPortrait = cw < ch;
-    const scale = isPortrait
-      ? (cw / iw) * 0.98 // Fits full width with edge breathing room
-      : Math.max(cw / iw, ch / ih);
+    let scale: number;
+    let sx: number;
+    let sy: number;
+    let sw: number;
+    let sh: number;
 
-    const sw = iw * scale;
-    const sh = ih * scale;
-    const sx = (cw - sw) / 2;
-    const sy = isPortrait
-      ? (ch - sh) / 2 - (ch * 0.04) // Shift slightly up on portrait for balanced visual weight
-      : (ch - sh) / 2;
+    if (isPortrait) {
+      // Mobile / Portrait: Scale proportionally so the entire emblem, flame & wreath fit comfortably
+      const targetEmblemWidth = cw * 0.92;
+      const emblemRatioInImage = 0.62; // The emblem occupies ~62% of the 16:9 frame width
+      const widthScale = targetEmblemWidth / (iw * emblemRatioInImage);
+      const heightScale = (ch * 0.72) / ih;
+      scale = Math.min(widthScale, heightScale);
+
+      sw = iw * scale;
+      sh = ih * scale;
+      sx = (cw - sw) / 2;
+      // Slight vertical offset so emblem is centered below navbar
+      sy = (ch - sh) / 2 + (ch * 0.025);
+    } else {
+      // Desktop / Landscape: Cover mode
+      scale = Math.max(cw / iw, ch / ih);
+      sw = iw * scale;
+      sh = ih * scale;
+      sx = (cw - sw) / 2;
+      sy = (ch - sh) / 2;
+    }
 
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    ctx.clearRect(0, 0, cw, ch);
+    ctx.fillStyle = '#060608';
+    ctx.fillRect(0, 0, cw, ch);
     ctx.drawImage(img, 0, 0, iw, ih, sx, sy, sw, sh);
   }, []);
 
@@ -181,7 +197,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       ScrollTrigger.create({
         trigger: section,
         start: 'top top',
-        end: () => (window.innerWidth < 768 ? '+=2200' : '+=3800'),
+        end: () => (window.innerWidth < 768 ? '+=2400' : '+=3800'),
         pin: true,
         scrub: 0.35,
         onUpdate: (self) => {
@@ -245,7 +261,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
 
         {/* ── Z-10: Hero Content Overlay (fades out on scroll) ── */}
         <div
-          className="pt-20 sm:pt-32 pb-6 sm:pb-8 px-4 sm:px-6"
+          className="pt-24 sm:pt-32 pb-8 px-4 sm:px-6"
           style={{
             position: 'absolute',
             inset: 0,
@@ -263,14 +279,14 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           }}
         >
           {/* Main Title */}
-          <div className="max-w-4xl mx-auto mb-2 sm:mb-5">
-            <p className="text-[10px] sm:text-xs md:text-sm font-semibold tracking-[0.22em] sm:tracking-[0.35em] text-amber-500/90 uppercase font-sans mb-1.5 sm:mb-3 flex items-center justify-center gap-2 sm:gap-3">
-              <span className="w-4 sm:w-8 h-[1px] bg-gradient-to-r from-transparent to-amber-500/60" />
+          <div className="max-w-4xl mx-auto mb-3 sm:mb-5">
+            <p className="text-[10px] sm:text-xs md:text-sm font-semibold tracking-[0.25em] sm:tracking-[0.35em] text-amber-500/90 uppercase font-sans mb-2 sm:mb-3 flex items-center justify-center gap-2 sm:gap-3">
+              <span className="w-5 sm:w-8 h-[1px] bg-gradient-to-r from-transparent to-amber-500/60" />
               THE FLAME OF RESOLUTION
-              <span className="w-4 sm:w-8 h-[1px] bg-gradient-to-l from-transparent to-amber-500/60" />
+              <span className="w-5 sm:w-8 h-[1px] bg-gradient-to-l from-transparent to-amber-500/60" />
             </p>
             <h1
-              className="font-serif text-2xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.08] text-white"
+              className="font-serif text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.08] text-white"
               style={{ textShadow: '0 4px 30px rgba(0,0,0,0.8)' }}
             >
               IGNITING GLOBAL <br />
@@ -280,7 +296,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
 
           {/* Subtitle */}
           <p
-            className="max-w-xs sm:max-w-xl mx-auto text-[11px] sm:text-base text-slate-200 leading-relaxed font-sans mb-3 sm:mb-8 line-clamp-2 sm:line-clamp-none px-2"
+            className="max-w-xl mx-auto text-xs sm:text-base text-slate-200 leading-relaxed font-sans mb-5 sm:mb-8 line-clamp-3 sm:line-clamp-none px-2"
             style={{ textShadow: '0 2px 12px rgba(0,0,0,0.9)' }}
           >
             The torch of multilateral statecraft burns in Istanbul. Over 500 emerging diplomats
@@ -323,7 +339,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           </div>
 
           {/* Scroll Prompt */}
-          <div className="mt-4 sm:mt-10 flex flex-col items-center gap-1 text-[10px] sm:text-[11px] font-mono tracking-widest text-slate-400 uppercase animate-bounce">
+          <div className="mt-6 sm:mt-10 flex flex-col items-center gap-1 text-[10px] sm:text-[11px] font-mono tracking-widest text-slate-400 uppercase animate-bounce">
             <span>SCROLL DOWN</span>
             <span className="text-amber-400 text-sm sm:text-base">↓</span>
           </div>
