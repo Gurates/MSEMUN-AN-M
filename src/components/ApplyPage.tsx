@@ -6,12 +6,7 @@ import {
   Settings, 
   Camera, 
   CheckCircle, 
-  ArrowLeft, 
-  Send, 
-  Shield, 
-  HelpCircle,
-  Bus,
-  FileText
+  ArrowLeft
 } from 'lucide-react';
 import { COMMITTEES_DATA } from '../data/conferenceData';
 import { PageView } from './Navbar';
@@ -29,35 +24,35 @@ const applicationTypes = [
     title: 'Delegate',
     description: 'Represent a nation in committee',
     icon: User,
-    color: '#00b4d8' // Cyan (AlaçatıMUN style)
+    color: '#00b4d8'
   },
   {
     id: 'delegation' as ApplicationType,
     title: 'Delegation',
     description: 'Register your school as a group',
     icon: Users,
-    color: '#ffffff' // White
+    color: '#ffffff'
   },
   {
     id: 'chairboard' as ApplicationType,
     title: 'Chairboard',
     description: 'Lead and moderate a committee',
     icon: Gavel,
-    color: '#f59e0b' // Yellow / Amber
+    color: '#f59e0b'
   },
   {
     id: 'admin' as ApplicationType,
     title: 'Admin Staff',
     description: 'Help organise the conference',
     icon: Settings,
-    color: '#00b4d8' // Cyan
+    color: '#00b4d8'
   },
   {
     id: 'press' as ApplicationType,
     title: 'Press',
     description: 'Cover the event as journalist or photographer',
     icon: Camera,
-    color: '#ffffff' // White
+    color: '#ffffff'
   }
 ];
 
@@ -66,21 +61,33 @@ const gradeOptions = [
   { value: '9th Grade', label: '9th Grade' },
   { value: '10th Grade', label: '10th Grade' },
   { value: '11th Grade', label: '11th Grade' },
-  { value: '12th Grade', label: '12th Grade' },
-  { value: 'University', label: 'University' },
-  { value: 'Graduate', label: 'Graduate' }
+  { value: '12th Grade', label: '12th Grade' }
+];
+
+const shuttleOptions = [
+  { value: '', label: 'Select a shuttle...' },
+  { value: 'Halkapınar', label: 'Halkapınar' },
+  { value: 'Karşıyaka', label: 'Karşıyaka' },
+  { value: 'Fahrettin Altay', label: 'Fahrettin Altay' },
+  { value: 'Torbalı', label: 'Torbalı' },
+  { value: 'I will not use a shuttle', label: 'I will not use a shuttle' }
+];
+
+const accommodationOptions = [
+  { value: '', label: 'Select...' },
+  { value: 'yes', label: 'Yes' },
+  { value: 'no', label: 'No' }
 ];
 
 export const ApplyPage: React.FC<ApplyPageProps> = ({
   initialCommitteeId,
   onNavigate
 }) => {
-  // Always open on Role Selection Hub when visiting Apply page
   const [activeRole, setActiveRole] = useState<ApplicationType>('hub');
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // ── Delegate State ──
+  // ── Delegate Form State ──
   const [delegateForm, setDelegateForm] = useState({
     fullName: '',
     school: '',
@@ -98,7 +105,7 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     accommodation: ''
   });
 
-  // ── Delegation State ──
+  // ── Delegation Form State ──
   const [delegationForm, setDelegationForm] = useState({
     fullName: '',
     school: '',
@@ -113,7 +120,7 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     accommodation: ''
   });
 
-  // ── Chairboard State ──
+  // ── Chairboard Form State ──
   const [chairboardForm, setChairboardForm] = useState({
     fullName: '',
     school: '',
@@ -127,18 +134,18 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     motivationLetter: '',
     crisisDirective: '',
     gaProcedure: '',
-    message: '',
-    references: '',
     qAiSuspicion: '',
     qFinalDocuments: '',
     qDirectiveHelp: '',
-    qDisagreement: '',
     qResolutionPaper: '',
+    qDisagreement: '',
     shuttle: '',
-    accommodation: ''
+    accommodation: '',
+    message: '',
+    references: ''
   });
 
-  // ── Admin State ──
+  // ── Admin Form State ──
   const [adminForm, setAdminForm] = useState({
     fullName: '',
     school: '',
@@ -147,12 +154,12 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     phone: '',
     orgExpList: '',
     references: '',
-    message: '',
     shuttle: '',
-    accommodation: ''
+    accommodation: '',
+    message: ''
   });
 
-  // ── Press State ──
+  // ── Press Form State ──
   const [pressForm, setPressForm] = useState({
     fullName: '',
     school: '',
@@ -162,23 +169,19 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     orgExpList: '',
     cameraModel: '',
     references: '',
-    message: '',
     shuttle: '',
-    accommodation: ''
+    accommodation: '',
+    message: ''
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Smart Committee filtering so the same committee cannot be picked twice in preferences
-  const getFilteredCommittees = (selectedPref: string, otherPrefs: string[]) => {
-    return COMMITTEES_DATA.map((c) => {
-      const isSelectedElsewhere = otherPrefs.includes(c.id) && c.id !== selectedPref;
-      return {
-        id: c.id,
-        name: `${c.acronym} — ${c.name}`,
-        disabled: isSelectedElsewhere
-      };
-    });
+  const getFilteredCommitteeOptions = (selectedPref: string, otherPrefs: string[]) => {
+    return COMMITTEES_DATA.map(c => ({
+      value: c.id,
+      label: `${c.acronym} — ${c.name}`,
+      disabled: otherPrefs.includes(c.id) && c.id !== selectedPref
+    }));
   };
 
   const handleGenericSubmit = (e: React.FormEvent, validator: () => boolean) => {
@@ -189,11 +192,11 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
         setIsSubmitting(false);
         setIsSuccess(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 600);
+      }, 500);
     }
   };
 
-  // ── Validation Rules ──
+  // ── Validate Delegate ──
   const validateDelegate = () => {
     const errs: Record<string, string> = {};
     if (!delegateForm.fullName.trim() || delegateForm.fullName.trim().length < 3) {
@@ -219,74 +222,78 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     return Object.keys(errs).length === 0;
   };
 
+  // ── Validate Delegation ──
   const validateDelegation = () => {
     const errs: Record<string, string> = {};
-    if (!delegationForm.fullName.trim()) errs.fullName = 'Full name is required.';
-    if (!delegationForm.school.trim()) errs.school = 'School is required.';
-    if (!delegationForm.delegationName.trim()) errs.delegationName = 'Delegation name is required.';
-    if (!delegationForm.expectedMembers.trim()) errs.expectedMembers = 'Expected members is required.';
+    if (!delegationForm.fullName.trim()) errs.fullName = 'Full name is required';
+    if (!delegationForm.school.trim()) errs.school = 'School is required';
+    if (!delegationForm.delegationName.trim()) errs.delegationName = 'Delegation name is required';
+    if (!delegationForm.expectedMembers.trim()) errs.expectedMembers = 'Expected members is required';
     if (!delegationForm.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(delegationForm.email)) {
-      errs.email = 'Please enter a valid email address.';
+      errs.email = 'Please enter a valid email address';
     }
-    if (!delegationForm.phone.trim()) errs.phone = 'Phone number is required.';
-    if (!delegationForm.allEmails.trim()) errs.allEmails = 'All member emails are required.';
-    if (!delegationForm.allPhones.trim()) errs.allPhones = 'All member phones are required.';
-    if (!delegationForm.shuttle) errs.shuttle = 'Please select your shuttle preference.';
-    if (!delegationForm.accommodation) errs.accommodation = 'Please select your accommodation preference.';
+    if (!delegationForm.phone.trim()) errs.phone = 'Phone number is required';
+    if (!delegationForm.allEmails.trim()) errs.allEmails = 'All member emails are required';
+    if (!delegationForm.allPhones.trim()) errs.allPhones = 'All member phones are required';
+    if (!delegationForm.shuttle) errs.shuttle = 'Please select your shuttle preference';
+    if (!delegationForm.accommodation) errs.accommodation = 'Please select your accommodation preference';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
+  // ── Validate Chairboard ──
   const validateChairboard = () => {
     const errs: Record<string, string> = {};
-    if (!chairboardForm.fullName.trim()) errs.fullName = 'Full name is required.';
-    if (!chairboardForm.school.trim()) errs.school = 'School is required.';
-    if (!chairboardForm.grade) errs.grade = 'Grade is required.';
+    if (!chairboardForm.fullName.trim()) errs.fullName = 'Full name is required';
+    if (!chairboardForm.school.trim()) errs.school = 'School is required';
+    if (!chairboardForm.grade) errs.grade = 'Grade is required';
     if (!chairboardForm.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(chairboardForm.email)) {
-      errs.email = 'Please enter a valid email address.';
+      errs.email = 'Please enter a valid email address';
     }
-    if (!chairboardForm.phone.trim()) errs.phone = 'Phone number is required.';
-    if (!chairboardForm.pref1) errs.pref1 = '1st choice is required.';
-    if (!chairboardForm.pref2) errs.pref2 = '2nd choice is required.';
-    if (!chairboardForm.pref3) errs.pref3 = '3rd choice is required.';
+    if (!chairboardForm.phone.trim()) errs.phone = 'Phone number is required';
+    if (!chairboardForm.pref1) errs.pref1 = '1st choice is required';
+    if (!chairboardForm.pref2) errs.pref2 = '2nd choice is required';
+    if (!chairboardForm.pref3) errs.pref3 = '3rd choice is required';
     if (chairboardForm.motivationLetter.trim().length < 150) {
-      errs.motivationLetter = `Motivation letter must be at least 150 characters. (${chairboardForm.motivationLetter.trim().length}/150)`;
+      errs.motivationLetter = 'Motivation letter must be at least 150 characters';
     }
-    if (!chairboardForm.qAiSuspicion.trim()) errs.qAiSuspicion = 'Please answer this question.';
-    if (!chairboardForm.qFinalDocuments.trim()) errs.qFinalDocuments = 'Please answer this question.';
-    if (!chairboardForm.qDisagreement.trim()) errs.qDisagreement = 'Please answer this question.';
-    if (!chairboardForm.shuttle) errs.shuttle = 'Please select your shuttle preference.';
-    if (!chairboardForm.accommodation) errs.accommodation = 'Please select your accommodation preference.';
+    if (!chairboardForm.qAiSuspicion.trim()) errs.qAiSuspicion = 'Please answer this question';
+    if (!chairboardForm.qFinalDocuments.trim()) errs.qFinalDocuments = 'Please answer this question';
+    if (!chairboardForm.qDisagreement.trim()) errs.qDisagreement = 'Please answer this question';
+    if (!chairboardForm.shuttle) errs.shuttle = 'Please select your shuttle preference';
+    if (!chairboardForm.accommodation) errs.accommodation = 'Please select your accommodation preference';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
+  // ── Validate Admin ──
   const validateAdmin = () => {
     const errs: Record<string, string> = {};
-    if (!adminForm.fullName.trim()) errs.fullName = 'Full name is required.';
-    if (!adminForm.school.trim()) errs.school = 'School is required.';
-    if (!adminForm.grade) errs.grade = 'Grade is required.';
+    if (!adminForm.fullName.trim()) errs.fullName = 'Full name is required';
+    if (!adminForm.school.trim()) errs.school = 'School is required';
+    if (!adminForm.grade) errs.grade = 'Grade is required';
     if (!adminForm.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminForm.email)) {
-      errs.email = 'Please enter a valid email address.';
+      errs.email = 'Please enter a valid email address';
     }
-    if (!adminForm.phone.trim()) errs.phone = 'Phone number is required.';
-    if (!adminForm.shuttle) errs.shuttle = 'Please select your shuttle preference.';
-    if (!adminForm.accommodation) errs.accommodation = 'Please select your accommodation preference.';
+    if (!adminForm.phone.trim()) errs.phone = 'Phone number is required';
+    if (!adminForm.shuttle) errs.shuttle = 'Please select your shuttle preference';
+    if (!adminForm.accommodation) errs.accommodation = 'Please select your accommodation preference';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
+  // ── Validate Press ──
   const validatePress = () => {
     const errs: Record<string, string> = {};
-    if (!pressForm.fullName.trim()) errs.fullName = 'Full name is required.';
-    if (!pressForm.school.trim()) errs.school = 'School is required.';
-    if (!pressForm.grade) errs.grade = 'Grade is required.';
+    if (!pressForm.fullName.trim()) errs.fullName = 'Full name is required';
+    if (!pressForm.school.trim()) errs.school = 'School is required';
+    if (!pressForm.grade) errs.grade = 'Grade is required';
     if (!pressForm.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pressForm.email)) {
-      errs.email = 'Please enter a valid email address.';
+      errs.email = 'Please enter a valid email address';
     }
-    if (!pressForm.phone.trim()) errs.phone = 'Phone number is required.';
-    if (!pressForm.shuttle) errs.shuttle = 'Please select your shuttle preference.';
-    if (!pressForm.accommodation) errs.accommodation = 'Please select your accommodation preference.';
+    if (!pressForm.phone.trim()) errs.phone = 'Phone number is required';
+    if (!pressForm.shuttle) errs.shuttle = 'Please select your shuttle preference';
+    if (!pressForm.accommodation) errs.accommodation = 'Please select your accommodation preference';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -296,39 +303,22 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     return (
       <div className="relative pt-28 sm:pt-36 md:pt-40 pb-16 sm:pb-24 min-h-screen cinematic-grid flex items-center justify-center">
         <div className="section-container relative z-10 max-w-xl text-center px-4">
-          <div className="p-8 sm:p-12 rounded-2xl bg-[#0c0c14]/95 border border-amber-500/30 backdrop-blur-xl shadow-[0_20px_70px_rgba(255,106,0,0.15)] flex flex-col items-center">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-amber-500/10 border border-amber-500/40 flex items-center justify-center text-amber-400 mb-6 animate-pulse">
-              <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10" />
-            </div>
-
-            <span className="font-mono text-xs font-semibold text-amber-500 tracking-widest uppercase mb-2">
-              ACCREDITATION SUBMITTED
-            </span>
-            <h2 className="font-serif text-2xl sm:text-4xl font-bold text-white mb-4">
-              APPLICATION RECEIVED
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-300 font-sans leading-relaxed mb-8">
-              Thank you for submitting your official application to <strong>MSEMUN 2026</strong>. 
-              Our Secretariat will review your credentials and get back to you via email within 5–7 business days.
+          <div className="p-8 sm:p-12 rounded-2xl bg-[#0c0c14]/95 border border-white/15 backdrop-blur-xl shadow-2xl flex flex-col items-center">
+            <CheckCircle className="w-16 h-16 text-[#00b4d8] mb-6" />
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">Application Submitted!</h2>
+            <p className="text-sm text-slate-300 font-sans leading-relaxed mb-8 max-w-md">
+              Thank you for applying to AlaçatıMUN 2026. We have received your application and will evaluate it carefully.
             </p>
-
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
-              <button
-                onClick={() => onNavigate('home')}
-                className="btn-secondary w-full text-xs !py-3"
-              >
-                RETURN HOME
-              </button>
-              <button
-                onClick={() => {
-                  setIsSuccess(false);
-                  setActiveRole('hub');
-                }}
-                className="btn-primary w-full text-xs !py-3"
-              >
-                SUBMIT ANOTHER
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                setIsSuccess(false);
+                setActiveRole('hub');
+                onNavigate('home');
+              }}
+              className="btn-primary text-sm !py-3 !px-8"
+            >
+              Return Home
+            </button>
           </div>
         </div>
       </div>
@@ -337,16 +327,7 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
 
   return (
     <div className="relative pt-28 sm:pt-36 md:pt-40 pb-16 sm:pb-24 min-h-screen cinematic-grid">
-      {/* Background ambient glow */}
-      <div 
-        className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle, rgba(255, 90, 0, 0.08) 0%, transparent 70%)',
-          filter: 'blur(90px)'
-        }}
-      />
-
-      <div className="section-container relative z-10 max-w-4xl mx-auto px-4 sm:px-6">
+      <div className="section-container relative z-10 max-w-3xl mx-auto px-4 sm:px-6">
         
         {/* ═══ ROLE SELECTION HUB (EXACT ALAÇATIMUN LAYOUT) ═══ */}
         {activeRole === 'hub' && (
@@ -354,16 +335,16 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
             
             {/* Header */}
             <div className="text-center mb-8 sm:mb-12 max-w-xl mx-auto">
-              <h1 className="font-serif text-3xl sm:text-5xl font-bold text-white mb-3 tracking-tight">
+              <h1 className="text-3xl sm:text-5xl font-bold text-white mb-3 tracking-tight font-serif">
                 Apply
               </h1>
-              <p className="text-xs sm:text-base text-slate-400 font-sans leading-relaxed">
+              <p className="text-sm sm:text-base text-slate-400 font-sans leading-relaxed">
                 Choose your role and submit your application. We look forward to seeing you.
               </p>
             </div>
 
             {/* 2-Column Grid Selection matching screenshot */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 w-full max-w-3xl">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 w-full">
               {applicationTypes.map((type) => {
                 const Icon = type.icon;
                 return (
@@ -371,9 +352,10 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                     key={type.id}
                     onClick={() => {
                       setActiveRole(type.id);
+                      setErrors({});
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
-                    className="group relative flex items-start gap-4 p-5 sm:p-6 rounded-xl bg-[#0e0e16]/90 border border-white/10 hover:border-white/25 hover:bg-[#131320] transition-all duration-300 cursor-pointer shadow-lg overflow-hidden"
+                    className="group relative flex items-start gap-4 p-5 sm:p-6 rounded-xl bg-[#0c0c14]/90 border border-white/10 hover:border-white/25 hover:bg-[#131320] transition-all duration-300 cursor-pointer shadow-lg overflow-hidden"
                   >
                     {/* Left Accent Line on Hover */}
                     <div 
@@ -409,14 +391,16 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
           </div>
         )}
 
-        {/* ═══ INDIVIDUAL REGISTRATION PAGES ═══ */}
+        {/* ═══ INDIVIDUAL REGISTRATION PAGES (EXACT ALAÇATIMUN FORMS) ═══ */}
         {activeRole !== 'hub' && (
-          <div>
-            {/* Top Back Button */}
+          <div className="w-full">
+            
+            {/* Top Back Navigation */}
             <div className="mb-6 flex items-center justify-between">
               <button
                 onClick={() => {
                   setActiveRole('hub');
+                  setErrors({});
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 className="inline-flex items-center gap-2 text-xs font-mono text-amber-400 hover:text-amber-300 transition-colors bg-white/5 hover:bg-white/10 px-3.5 py-2 rounded-lg border border-white/10 cursor-pointer"
@@ -426,789 +410,1127 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
               </button>
 
               <span className="font-mono text-xs text-slate-400 uppercase">
-                MSEMUN 2026 // {activeRole.toUpperCase()}
+                ALAÇATIMUN '26 // {activeRole.toUpperCase()}
               </span>
-            </div>
-
-            {/* Header */}
-            <div className="mb-8">
-              <h1 className="font-serif text-2xl sm:text-4xl font-bold text-white mb-2">
-                {activeRole === 'delegate' && 'Delegate Registration'}
-                {activeRole === 'delegation' && 'Delegation Registration'}
-                {activeRole === 'chairboard' && 'Chairboard Registration'}
-                {activeRole === 'admin' && 'Admin Staff Registration'}
-                {activeRole === 'press' && 'Press Corps Registration'}
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-300 font-sans">
-                {activeRole === 'delegate' && 'Fill out your individual delegate accreditation and committee preferences.'}
-                {activeRole === 'delegation' && 'Register your school or institutional cohort with priority matrix allocation.'}
-                {activeRole === 'chairboard' && 'Lead and moderate substantive crisis directives or General Assembly proceedings.'}
-                {activeRole === 'admin' && 'Coordinate protocol, delegate logistics, conference staging, and secretariat administration.'}
-                {activeRole === 'press' && 'Cover the event as a journalist, photographer, or live broadcast correspondent.'}
-              </p>
             </div>
 
             {/* ═══ 1. DELEGATE FORM ═══ */}
             {activeRole === 'delegate' && (
-              <form 
-                onSubmit={(e) => handleGenericSubmit(e, validateDelegate)}
-                className="p-6 sm:p-10 rounded-2xl bg-[#0c0c14]/95 border border-white/10 shadow-2xl space-y-8 backdrop-blur-xl"
-              >
-                <div>
-                  <h3 className="font-serif text-lg sm:text-xl font-bold text-white mb-4 flex items-center gap-2 border-b border-white/8 pb-2">
-                    <User className="w-5 h-5 text-amber-400" />
-                    <span>Personal & Educational Information</span>
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Full Name *</label>
-                      <input
-                        type="text"
-                        value={delegateForm.fullName}
-                        onChange={(e) => setDelegateForm({ ...delegateForm, fullName: e.target.value })}
-                        placeholder="e.g. Alexander Hamilton"
-                        className={`w-full px-4 py-3 rounded-xl bg-black/50 border text-sm text-white focus:outline-none transition-colors ${
-                          errors.fullName ? 'border-red-500' : 'border-white/12 focus:border-amber-500'
-                        }`}
-                      />
-                      {errors.fullName && <p className="text-[11px] text-red-400 mt-1">{errors.fullName}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">School / Institution *</label>
-                      <input
-                        type="text"
-                        value={delegateForm.school}
-                        onChange={(e) => setDelegateForm({ ...delegateForm, school: e.target.value })}
-                        placeholder="e.g. Istanbul High School"
-                        className={`w-full px-4 py-3 rounded-xl bg-black/50 border text-sm text-white focus:outline-none transition-colors ${
-                          errors.school ? 'border-red-500' : 'border-white/12 focus:border-amber-500'
-                        }`}
-                      />
-                      {errors.school && <p className="text-[11px] text-red-400 mt-1">{errors.school}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Grade *</label>
-                      <select
-                        value={delegateForm.grade}
-                        onChange={(e) => setDelegateForm({ ...delegateForm, grade: e.target.value })}
-                        className={`w-full px-4 py-3 rounded-xl bg-[#0c0c14] border text-sm text-white focus:outline-none transition-colors ${
-                          errors.grade ? 'border-red-500' : 'border-white/12 focus:border-amber-500'
-                        }`}
-                      >
-                        <option value="">Select Grade</option>
-                        {gradeOptions.map(g => (
-                          <option key={g.value} value={g.value}>{g.label}</option>
-                        ))}
-                      </select>
-                      {errors.grade && <p className="text-[11px] text-red-400 mt-1">{errors.grade}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Phone *</label>
-                      <input
-                        type="tel"
-                        value={delegateForm.phone}
-                        onChange={(e) => setDelegateForm({ ...delegateForm, phone: e.target.value })}
-                        placeholder="+90 5XX XXX XX XX"
-                        className={`w-full px-4 py-3 rounded-xl bg-black/50 border text-sm text-white focus:outline-none transition-colors ${
-                          errors.phone ? 'border-red-500' : 'border-white/12 focus:border-amber-500'
-                        }`}
-                      />
-                      {errors.phone && <p className="text-[11px] text-red-400 mt-1">{errors.phone}</p>}
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Email *</label>
-                      <input
-                        type="email"
-                        value={delegateForm.email}
-                        onChange={(e) => setDelegateForm({ ...delegateForm, email: e.target.value })}
-                        placeholder="delegate@example.com"
-                        className={`w-full px-4 py-3 rounded-xl bg-black/50 border text-sm text-white focus:outline-none transition-colors ${
-                          errors.email ? 'border-red-500' : 'border-white/12 focus:border-amber-500'
-                        }`}
-                      />
-                      {errors.email && <p className="text-[11px] text-red-400 mt-1">{errors.email}</p>}
-                    </div>
-                  </div>
+              <div className="p-6 sm:p-10 rounded-2xl bg-[#0c0c14]/95 border border-white/10 shadow-2xl backdrop-blur-xl">
+                <div className="text-center mb-8 pb-6 border-b border-white/10">
+                  <h1 className="text-2xl sm:text-4xl font-bold text-white mb-2 font-serif">Delegate Application</h1>
+                  <p className="text-xs sm:text-sm text-slate-400">Represent a nation in one of our committees. Please fill out the application form carefully.</p>
                 </div>
 
-                {/* Committee Preferences */}
-                <div>
-                  <h3 className="font-serif text-lg sm:text-xl font-bold text-white mb-4 flex items-center gap-2 border-b border-white/8 pb-2">
-                    <Shield className="w-5 h-5 text-amber-400" />
-                    <span>Committee Preferences</span>
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">1st Preference *</label>
-                      <select
-                        value={delegateForm.committeePreference1}
-                        onChange={(e) => setDelegateForm({ ...delegateForm, committeePreference1: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-[#0c0c14] border border-white/12 text-sm text-white focus:border-amber-500 focus:outline-none"
-                      >
-                        {getFilteredCommittees(delegateForm.committeePreference1, [delegateForm.committeePreference2, delegateForm.committeePreference3]).map(c => (
-                          <option key={c.id} value={c.id} disabled={c.disabled}>{c.name}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">2nd Preference *</label>
-                      <select
-                        value={delegateForm.committeePreference2}
-                        onChange={(e) => setDelegateForm({ ...delegateForm, committeePreference2: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-[#0c0c14] border border-white/12 text-sm text-white focus:border-amber-500 focus:outline-none"
-                      >
-                        <option value="">Select 2nd Choice</option>
-                        {getFilteredCommittees(delegateForm.committeePreference2, [delegateForm.committeePreference1, delegateForm.committeePreference3]).map(c => (
-                          <option key={c.id} value={c.id} disabled={c.disabled}>{c.name}</option>
-                        ))}
-                      </select>
-                      {errors.committeePreference2 && <p className="text-[11px] text-red-400 mt-1">{errors.committeePreference2}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">3rd Preference *</label>
-                      <select
-                        value={delegateForm.committeePreference3}
-                        onChange={(e) => setDelegateForm({ ...delegateForm, committeePreference3: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-[#0c0c14] border border-white/12 text-sm text-white focus:border-amber-500 focus:outline-none"
-                      >
-                        <option value="">Select 3rd Choice</option>
-                        {getFilteredCommittees(delegateForm.committeePreference3, [delegateForm.committeePreference1, delegateForm.committeePreference2]).map(c => (
-                          <option key={c.id} value={c.id} disabled={c.disabled}>{c.name}</option>
-                        ))}
-                      </select>
-                      {errors.committeePreference3 && <p className="text-[11px] text-red-400 mt-1">{errors.committeePreference3}</p>}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Experience & Motivation */}
-                <div>
-                  <h3 className="font-serif text-lg sm:text-xl font-bold text-white mb-4 flex items-center gap-2 border-b border-white/8 pb-2">
-                    <FileText className="w-5 h-5 text-amber-400" />
-                    <span>Experience & Motivation</span>
-                  </h3>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">
-                        MUN Experience List
-                      </label>
-                      <textarea
-                        rows={3}
-                        value={delegateForm.expList}
-                        onChange={(e) => setDelegateForm({ ...delegateForm, expList: e.target.value })}
-                        placeholder="List your previous MUN experiences..."
-                        className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-amber-500"
-                      />
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <label className="text-xs font-mono text-slate-300 uppercase">
-                          Motivation Letter * (Min 150 Characters)
-                        </label>
-                        <span className={`text-[11px] font-mono ${delegateForm.motivationLetter.length >= 150 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                          {delegateForm.motivationLetter.length} / 150
-                        </span>
+                <form onSubmit={(e) => handleGenericSubmit(e, validateDelegate)} className="space-y-8">
+                  {/* General Information */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">General Information</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Full Name *</label>
+                        <input
+                          type="text"
+                          value={delegateForm.fullName}
+                          onChange={(e) => setDelegateForm({ ...delegateForm, fullName: e.target.value })}
+                          placeholder="Your full name"
+                          maxLength={100}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.fullName ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
+                        />
+                        {errors.fullName && <p className="text-[11px] text-red-400 mt-1">{errors.fullName}</p>}
                       </div>
 
-                      <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mb-2">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">School *</label>
+                        <input
+                          type="text"
+                          value={delegateForm.school}
+                          onChange={(e) => setDelegateForm({ ...delegateForm, school: e.target.value })}
+                          placeholder="Your school or institution"
+                          maxLength={150}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.school ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
+                        />
+                        {errors.school && <p className="text-[11px] text-red-400 mt-1">{errors.school}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Grade *</label>
+                        <select
+                          value={delegateForm.grade}
+                          onChange={(e) => setDelegateForm({ ...delegateForm, grade: e.target.value })}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.grade ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
+                        >
+                          <option value="">Select Grade</option>
+                          {gradeOptions.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+                        </select>
+                        {errors.grade && <p className="text-[11px] text-red-400 mt-1">{errors.grade}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Email *</label>
+                        <input
+                          type="email"
+                          value={delegateForm.email}
+                          onChange={(e) => setDelegateForm({ ...delegateForm, email: e.target.value })}
+                          placeholder="you@example.com"
+                          maxLength={100}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.email ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
+                        />
+                        {errors.email && <p className="text-[11px] text-red-400 mt-1">{errors.email}</p>}
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Phone *</label>
+                        <input
+                          type="tel"
+                          value={delegateForm.phone}
+                          onChange={(e) => setDelegateForm({ ...delegateForm, phone: e.target.value })}
+                          placeholder="0555 000 00 00"
+                          maxLength={25}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.phone ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
+                        />
+                        {errors.phone && <p className="text-[11px] text-red-400 mt-1">{errors.phone}</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* MUN Experience */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">MUN Experience</h3>
+                    <div>
+                      <label className="block text-xs text-slate-300 mb-1 font-medium">
+                        MUN Experience <span className="text-slate-500">(optional)</span>
+                      </label>
+                      <textarea
+                        rows={4}
+                        value={delegateForm.expList}
+                        onChange={(e) => setDelegateForm({ ...delegateForm, expList: e.target.value })}
+                        placeholder="List your previous MUN conferences, committees, and awards.&#10;Leave blank if this is your first conference."
+                        maxLength={3000}
+                        className="w-full px-4 py-2.5 rounded-lg bg-black/40 border border-white/12 text-sm text-white focus:outline-none focus:border-[#00b4d8]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Committee Preferences */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Committee Preferences *</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">1st Choice</label>
+                        <select
+                          value={delegateForm.committeePreference1}
+                          onChange={(e) => setDelegateForm({ ...delegateForm, committeePreference1: e.target.value })}
+                          className="w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border border-white/12 text-sm text-white focus:outline-none focus:border-[#00b4d8]"
+                        >
+                          {getFilteredCommitteeOptions(delegateForm.committeePreference1, [delegateForm.committeePreference2, delegateForm.committeePreference3]).map(c => (
+                            <option key={c.value} value={c.value} disabled={c.disabled}>{c.label}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">2nd Choice</label>
+                        <select
+                          value={delegateForm.committeePreference2}
+                          onChange={(e) => setDelegateForm({ ...delegateForm, committeePreference2: e.target.value })}
+                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.committeePreference2 ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
+                        >
+                          <option value="">Select 2nd Choice</option>
+                          {getFilteredCommitteeOptions(delegateForm.committeePreference2, [delegateForm.committeePreference1, delegateForm.committeePreference3]).map(c => (
+                            <option key={c.value} value={c.value} disabled={c.disabled}>{c.label}</option>
+                          ))}
+                        </select>
+                        {errors.committeePreference2 && <p className="text-[11px] text-red-400 mt-1">{errors.committeePreference2}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">3rd Choice</label>
+                        <select
+                          value={delegateForm.committeePreference3}
+                          onChange={(e) => setDelegateForm({ ...delegateForm, committeePreference3: e.target.value })}
+                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.committeePreference3 ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
+                        >
+                          <option value="">Select 3rd Choice</option>
+                          {getFilteredCommitteeOptions(delegateForm.committeePreference3, [delegateForm.committeePreference1, delegateForm.committeePreference2]).map(c => (
+                            <option key={c.value} value={c.value} disabled={c.disabled}>{c.label}</option>
+                          ))}
+                        </select>
+                        {errors.committeePreference3 && <p className="text-[11px] text-red-400 mt-1">{errors.committeePreference3}</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Motivation Letter */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Motivation Letter *</h3>
+                    <div>
+                      <label className="block text-xs text-slate-300 mb-1.5 font-medium">
+                        Why do you want to attend AlaçatıMUN 2026? What do you hope to gain from the experience?
+                      </label>
+                      <textarea
+                        rows={6}
+                        value={delegateForm.motivationLetter}
+                        onChange={(e) => setDelegateForm({ ...delegateForm, motivationLetter: e.target.value })}
+                        placeholder="Motivation Letter (Min. 150 characters)..."
+                        maxLength={5000}
+                        className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.motivationLetter ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
+                      />
+
+                      {/* AlaçatıMUN Character Bar */}
+                      <div className="mt-2 h-1 bg-white/10 rounded-full overflow-hidden">
                         <div 
-                          className={`h-full transition-all duration-300 ${
-                            delegateForm.motivationLetter.length >= 150 ? 'bg-emerald-500' : 'bg-amber-500'
-                          }`}
+                          className="h-full transition-all duration-300 bg-[#00b4d8]"
                           style={{ width: `${Math.min(100, (delegateForm.motivationLetter.length / 150) * 100)}%` }}
                         />
                       </div>
-
-                      <textarea
-                        rows={5}
-                        value={delegateForm.motivationLetter}
-                        onChange={(e) => setDelegateForm({ ...delegateForm, motivationLetter: e.target.value })}
-                        placeholder="Write your motivation letter here..."
-                        className={`w-full px-4 py-3 rounded-xl bg-black/50 border text-sm text-white focus:outline-none transition-colors ${
-                          errors.motivationLetter ? 'border-red-500' : 'border-white/12 focus:border-amber-500'
-                        }`}
-                      />
-                      {errors.motivationLetter && <p className="text-[11px] text-red-400 mt-1">{errors.motivationLetter}</p>}
+                      <div className="flex justify-between items-center text-[11px] text-slate-400 mt-1">
+                        {errors.motivationLetter ? <span className="text-red-400">{errors.motivationLetter}</span> : <span />}
+                        <span>{delegateForm.motivationLetter.length} / 150</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Logistics */}
-                <div>
-                  <h3 className="font-serif text-lg sm:text-xl font-bold text-white mb-4 flex items-center gap-2 border-b border-white/8 pb-2">
-                    <Bus className="w-5 h-5 text-amber-400" />
-                    <span>Logistics & Options</span>
-                  </h3>
+                  {/* Logistics */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Logistics *</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Which shuttle will you use?</label>
+                        <select
+                          value={delegateForm.shuttle}
+                          onChange={(e) => setDelegateForm({ ...delegateForm, shuttle: e.target.value })}
+                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.shuttle ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
+                        >
+                          {shuttleOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        </select>
+                        {errors.shuttle && <p className="text-[11px] text-red-400 mt-1">{errors.shuttle}</p>}
+                      </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Shuttle Preference *</label>
-                      <select
-                        value={delegateForm.shuttle}
-                        onChange={(e) => setDelegateForm({ ...delegateForm, shuttle: e.target.value })}
-                        className={`w-full px-4 py-3 rounded-xl bg-[#0c0c14] border text-sm text-white focus:outline-none transition-colors ${
-                          errors.shuttle ? 'border-red-500' : 'border-white/12 focus:border-amber-500'
-                        }`}
-                      >
-                        <option value="">Select Option</option>
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                      </select>
-                      {errors.shuttle && <p className="text-[11px] text-red-400 mt-1">{errors.shuttle}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Accommodation Preference *</label>
-                      <select
-                        value={delegateForm.accommodation}
-                        onChange={(e) => setDelegateForm({ ...delegateForm, accommodation: e.target.value })}
-                        className={`w-full px-4 py-3 rounded-xl bg-[#0c0c14] border text-sm text-white focus:outline-none transition-colors ${
-                          errors.accommodation ? 'border-red-500' : 'border-white/12 focus:border-amber-500'
-                        }`}
-                      >
-                        <option value="">Select Option</option>
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                      </select>
-                      {errors.accommodation && <p className="text-[11px] text-red-400 mt-1">{errors.accommodation}</p>}
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Message / Notes</label>
-                      <input
-                        type="text"
-                        value={delegateForm.message}
-                        onChange={(e) => setDelegateForm({ ...delegateForm, message: e.target.value })}
-                        placeholder="Any additional notes or requests..."
-                        className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-amber-500"
-                      />
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Will you be using the accommodation?</label>
+                        <select
+                          value={delegateForm.accommodation}
+                          onChange={(e) => setDelegateForm({ ...delegateForm, accommodation: e.target.value })}
+                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.accommodation ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
+                        >
+                          {accommodationOptions.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+                        </select>
+                        {errors.accommodation && <p className="text-[11px] text-red-400 mt-1">{errors.accommodation}</p>}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="pt-4 border-t border-white/8 flex justify-end">
+                  {/* Additional Info & References */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">
+                      Additional Info & References <span className="text-slate-500 text-xs font-normal">(optional)</span>
+                    </h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Anything you want to add</label>
+                        <textarea
+                          rows={3}
+                          value={delegateForm.message}
+                          onChange={(e) => setDelegateForm({ ...delegateForm, message: e.target.value })}
+                          placeholder="Any additional information you'd like us to know..."
+                          maxLength={2000}
+                          className="w-full px-4 py-2.5 rounded-lg bg-black/40 border border-white/12 text-sm text-white focus:outline-none focus:border-[#00b4d8]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">References</label>
+                        <textarea
+                          rows={3}
+                          value={delegateForm.references}
+                          onChange={(e) => setDelegateForm({ ...delegateForm, references: e.target.value })}
+                          placeholder="Names and contact details of people who can speak to your MUN experience (e.g. a previous chair or faculty advisor)."
+                          maxLength={1000}
+                          className="w-full px-4 py-2.5 rounded-lg bg-black/40 border border-white/12 text-sm text-white focus:outline-none focus:border-[#00b4d8]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="btn-primary w-full sm:w-auto text-xs sm:text-sm !py-3.5 !px-8"
+                    className="btn-primary w-full text-sm !py-3.5"
                   >
-                    <span>{isSubmitting ? 'SUBMITTING...' : 'SUBMIT APPLICATION'}</span>
-                    <Send className="w-4 h-4 ml-1.5" />
+                    {isSubmitting ? 'Submitting Application...' : 'Submit Application'}
                   </button>
-                </div>
-              </form>
+                </form>
+              </div>
             )}
 
             {/* ═══ 2. DELEGATION FORM ═══ */}
             {activeRole === 'delegation' && (
-              <form 
-                onSubmit={(e) => handleGenericSubmit(e, validateDelegation)}
-                className="p-6 sm:p-10 rounded-2xl bg-[#0c0c14]/95 border border-white/10 shadow-2xl space-y-8 backdrop-blur-xl"
-              >
-                <div>
-                  <h3 className="font-serif text-lg sm:text-xl font-bold text-white mb-4 flex items-center gap-2 border-b border-white/8 pb-2">
-                    <Users className="w-5 h-5 text-amber-400" />
-                    <span>Delegation Details</span>
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Full Name *</label>
-                      <input
-                        type="text"
-                        value={delegationForm.fullName}
-                        onChange={(e) => setDelegationForm({ ...delegationForm, fullName: e.target.value })}
-                        placeholder="Head Delegate / Advisor Name"
-                        className={`w-full px-4 py-3 rounded-xl bg-black/50 border text-sm text-white focus:outline-none ${errors.fullName ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
-                      />
-                      {errors.fullName && <p className="text-[11px] text-red-400 mt-1">{errors.fullName}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">School *</label>
-                      <input
-                        type="text"
-                        value={delegationForm.school}
-                        onChange={(e) => setDelegationForm({ ...delegationForm, school: e.target.value })}
-                        placeholder="School Name"
-                        className={`w-full px-4 py-3 rounded-xl bg-black/50 border text-sm text-white focus:outline-none ${errors.school ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
-                      />
-                      {errors.school && <p className="text-[11px] text-red-400 mt-1">{errors.school}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Delegation Name *</label>
-                      <input
-                        type="text"
-                        value={delegationForm.delegationName}
-                        onChange={(e) => setDelegationForm({ ...delegationForm, delegationName: e.target.value })}
-                        placeholder="Delegation Name"
-                        className={`w-full px-4 py-3 rounded-xl bg-black/50 border text-sm text-white focus:outline-none ${errors.delegationName ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
-                      />
-                      {errors.delegationName && <p className="text-[11px] text-red-400 mt-1">{errors.delegationName}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Expected Members *</label>
-                      <input
-                        type="number"
-                        min="2"
-                        value={delegationForm.expectedMembers}
-                        onChange={(e) => setDelegationForm({ ...delegationForm, expectedMembers: e.target.value })}
-                        placeholder="e.g. 10"
-                        className={`w-full px-4 py-3 rounded-xl bg-black/50 border text-sm text-white focus:outline-none ${errors.expectedMembers ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
-                      />
-                      {errors.expectedMembers && <p className="text-[11px] text-red-400 mt-1">{errors.expectedMembers}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Email *</label>
-                      <input
-                        type="email"
-                        value={delegationForm.email}
-                        onChange={(e) => setDelegationForm({ ...delegationForm, email: e.target.value })}
-                        placeholder="advisor@school.edu"
-                        className={`w-full px-4 py-3 rounded-xl bg-black/50 border text-sm text-white focus:outline-none ${errors.email ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
-                      />
-                      {errors.email && <p className="text-[11px] text-red-400 mt-1">{errors.email}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Phone *</label>
-                      <input
-                        type="tel"
-                        value={delegationForm.phone}
-                        onChange={(e) => setDelegationForm({ ...delegationForm, phone: e.target.value })}
-                        placeholder="+90 5XX..."
-                        className={`w-full px-4 py-3 rounded-xl bg-black/50 border text-sm text-white focus:outline-none ${errors.phone ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
-                      />
-                      {errors.phone && <p className="text-[11px] text-red-400 mt-1">{errors.phone}</p>}
-                    </div>
-                  </div>
+              <div className="p-6 sm:p-10 rounded-2xl bg-[#0c0c14]/95 border border-white/10 shadow-2xl backdrop-blur-xl">
+                <div className="text-center mb-8 pb-6 border-b border-white/10">
+                  <h1 className="text-2xl sm:text-4xl font-bold text-white mb-2 font-serif">Delegation Registration</h1>
+                  <p className="text-xs sm:text-sm text-slate-400">Register your school's delegation and bring your team to AlaçatıMUN '26.</p>
                 </div>
 
-                {/* Member Details */}
-                <div>
-                  <h3 className="font-serif text-lg sm:text-xl font-bold text-white mb-4 flex items-center gap-2 border-b border-white/8 pb-2">
-                    <FileText className="w-5 h-5 text-amber-400" />
-                    <span>Member Contacts</span>
-                  </h3>
-                  <div className="space-y-4">
+                <form onSubmit={(e) => handleGenericSubmit(e, validateDelegation)} className="space-y-8">
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Delegation Setup</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Full Name (Head Delegate)</label>
+                        <input
+                          type="text"
+                          value={delegationForm.fullName}
+                          onChange={(e) => setDelegationForm({ ...delegationForm, fullName: e.target.value })}
+                          placeholder="Your full name"
+                          maxLength={100}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.fullName ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
+                        />
+                        {errors.fullName && <p className="text-[11px] text-red-400 mt-1">{errors.fullName}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">School</label>
+                        <input
+                          type="text"
+                          value={delegationForm.school}
+                          onChange={(e) => setDelegationForm({ ...delegationForm, school: e.target.value })}
+                          placeholder="Your school or institution"
+                          maxLength={150}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.school ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
+                        />
+                        {errors.school && <p className="text-[11px] text-red-400 mt-1">{errors.school}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Delegation Name</label>
+                        <input
+                          type="text"
+                          value={delegationForm.delegationName}
+                          onChange={(e) => setDelegationForm({ ...delegationForm, delegationName: e.target.value })}
+                          placeholder="Enter your delegation name"
+                          maxLength={150}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.delegationName ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
+                        />
+                        {errors.delegationName && <p className="text-[11px] text-red-400 mt-1">{errors.delegationName}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Expected Members</label>
+                        <input
+                          type="number"
+                          max={200}
+                          value={delegationForm.expectedMembers}
+                          onChange={(e) => setDelegationForm({ ...delegationForm, expectedMembers: e.target.value })}
+                          placeholder="e.g. 12"
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.expectedMembers ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
+                        />
+                        {errors.expectedMembers && <p className="text-[11px] text-red-400 mt-1">{errors.expectedMembers}</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Contact Details */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Contact Details</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Your Email</label>
+                        <input
+                          type="email"
+                          value={delegationForm.email}
+                          onChange={(e) => setDelegationForm({ ...delegationForm, email: e.target.value })}
+                          placeholder="you@example.com"
+                          maxLength={100}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.email ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
+                        />
+                        {errors.email && <p className="text-[11px] text-red-400 mt-1">{errors.email}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Your Phone</label>
+                        <input
+                          type="tel"
+                          value={delegationForm.phone}
+                          onChange={(e) => setDelegationForm({ ...delegationForm, phone: e.target.value })}
+                          placeholder="0555 000 00 00"
+                          maxLength={25}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.phone ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
+                        />
+                        {errors.phone && <p className="text-[11px] text-red-400 mt-1">{errors.phone}</p>}
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">All Member Emails</label>
+                        <textarea
+                          rows={4}
+                          value={delegationForm.allEmails}
+                          onChange={(e) => setDelegationForm({ ...delegationForm, allEmails: e.target.value })}
+                          placeholder="student1@school.com&#10;student2@school.com"
+                          maxLength={3000}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.allEmails ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
+                        />
+                        {errors.allEmails && <p className="text-[11px] text-red-400 mt-1">{errors.allEmails}</p>}
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">All Member Phone Numbers</label>
+                        <textarea
+                          rows={4}
+                          value={delegationForm.allPhones}
+                          onChange={(e) => setDelegationForm({ ...delegationForm, allPhones: e.target.value })}
+                          placeholder="0555 000 00 00&#10;0555 111 11 11"
+                          maxLength={1500}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.allPhones ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
+                        />
+                        {errors.allPhones && <p className="text-[11px] text-red-400 mt-1">{errors.allPhones}</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Logistics */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Logistics *</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Which shuttle will you use?</label>
+                        <select
+                          value={delegationForm.shuttle}
+                          onChange={(e) => setDelegationForm({ ...delegationForm, shuttle: e.target.value })}
+                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.shuttle ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
+                        >
+                          {shuttleOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        </select>
+                        {errors.shuttle && <p className="text-[11px] text-red-400 mt-1">{errors.shuttle}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Will you be using the accommodation?</label>
+                        <select
+                          value={delegationForm.accommodation}
+                          onChange={(e) => setDelegationForm({ ...delegationForm, accommodation: e.target.value })}
+                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.accommodation ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
+                        >
+                          {accommodationOptions.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+                        </select>
+                        {errors.accommodation && <p className="text-[11px] text-red-400 mt-1">{errors.accommodation}</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Information */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Additional Information</h3>
                     <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">All Member Emails *</label>
+                      <label className="block text-xs text-slate-300 mb-1 font-medium">Anything you want to add (Optional)</label>
                       <textarea
                         rows={3}
-                        value={delegationForm.allEmails}
-                        onChange={(e) => setDelegationForm({ ...delegationForm, allEmails: e.target.value })}
-                        placeholder="List all member emails..."
-                        className={`w-full px-4 py-3 rounded-xl bg-black/50 border text-sm text-white focus:outline-none ${errors.allEmails ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
+                        value={delegationForm.message}
+                        onChange={(e) => setDelegationForm({ ...delegationForm, message: e.target.value })}
+                        placeholder="Any additional information you'd like us to know..."
+                        maxLength={2000}
+                        className="w-full px-4 py-2.5 rounded-lg bg-black/40 border border-white/12 text-sm text-white focus:outline-none focus:border-white"
                       />
-                      {errors.allEmails && <p className="text-[11px] text-red-400 mt-1">{errors.allEmails}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">All Member Phone Numbers *</label>
-                      <textarea
-                        rows={2}
-                        value={delegationForm.allPhones}
-                        onChange={(e) => setDelegationForm({ ...delegationForm, allPhones: e.target.value })}
-                        placeholder="List all member phone numbers..."
-                        className={`w-full px-4 py-3 rounded-xl bg-black/50 border text-sm text-white focus:outline-none ${errors.allPhones ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
-                      />
-                      {errors.allPhones && <p className="text-[11px] text-red-400 mt-1">{errors.allPhones}</p>}
                     </div>
                   </div>
-                </div>
 
-                <div className="pt-4 border-t border-white/8 flex justify-end">
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="btn-primary w-full sm:w-auto text-xs sm:text-sm !py-3.5 !px-8"
+                    className="btn-primary w-full text-sm !py-3.5"
                   >
-                    <span>{isSubmitting ? 'SUBMITTING...' : 'SUBMIT DELEGATION'}</span>
-                    <Send className="w-4 h-4 ml-1.5" />
+                    {isSubmitting ? 'Submitting...' : 'Submit Application'}
                   </button>
-                </div>
-              </form>
+                </form>
+              </div>
             )}
 
-            {/* ═══ 3. CHAIRBOARD FORM (ALAÇATIMUN EXACT QUESTIONS) ═══ */}
+            {/* ═══ 3. CHAIRBOARD FORM ═══ */}
             {activeRole === 'chairboard' && (
-              <form 
-                onSubmit={(e) => handleGenericSubmit(e, validateChairboard)}
-                className="p-6 sm:p-10 rounded-2xl bg-[#0c0c14]/95 border border-white/10 shadow-2xl space-y-8 backdrop-blur-xl"
-              >
-                <div>
-                  <h3 className="font-serif text-lg sm:text-xl font-bold text-white mb-4 flex items-center gap-2 border-b border-white/8 pb-2">
-                    <Gavel className="w-5 h-5 text-amber-400" />
-                    <span>Personal Information</span>
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Full Name *</label>
-                      <input
-                        type="text"
-                        value={chairboardForm.fullName}
-                        onChange={(e) => setChairboardForm({ ...chairboardForm, fullName: e.target.value })}
-                        placeholder="Full Name"
-                        className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-amber-500"
-                      />
-                      {errors.fullName && <p className="text-[11px] text-red-400 mt-1">{errors.fullName}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">School *</label>
-                      <input
-                        type="text"
-                        value={chairboardForm.school}
-                        onChange={(e) => setChairboardForm({ ...chairboardForm, school: e.target.value })}
-                        placeholder="School Name"
-                        className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-amber-500"
-                      />
-                      {errors.school && <p className="text-[11px] text-red-400 mt-1">{errors.school}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Grade *</label>
-                      <select
-                        value={chairboardForm.grade}
-                        onChange={(e) => setChairboardForm({ ...chairboardForm, grade: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-[#0c0c14] border border-white/12 text-sm text-white focus:outline-none focus:border-amber-500"
-                      >
-                        <option value="">Select Grade</option>
-                        {gradeOptions.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
-                      </select>
-                      {errors.grade && <p className="text-[11px] text-red-400 mt-1">{errors.grade}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Phone *</label>
-                      <input
-                        type="tel"
-                        value={chairboardForm.phone}
-                        onChange={(e) => setChairboardForm({ ...chairboardForm, phone: e.target.value })}
-                        placeholder="+90 5XX..."
-                        className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-amber-500"
-                      />
-                      {errors.phone && <p className="text-[11px] text-red-400 mt-1">{errors.phone}</p>}
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Email *</label>
-                      <input
-                        type="email"
-                        value={chairboardForm.email}
-                        onChange={(e) => setChairboardForm({ ...chairboardForm, email: e.target.value })}
-                        placeholder="chair@example.com"
-                        className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-amber-500"
-                      />
-                      {errors.email && <p className="text-[11px] text-red-400 mt-1">{errors.email}</p>}
-                    </div>
-                  </div>
+              <div className="p-6 sm:p-10 rounded-2xl bg-[#0c0c14]/95 border border-white/10 shadow-2xl backdrop-blur-xl">
+                <div className="text-center mb-8 pb-6 border-b border-white/10">
+                  <h1 className="text-2xl sm:text-4xl font-bold text-white mb-2 font-serif">Chairboard Registration</h1>
+                  <p className="text-xs sm:text-sm text-slate-400">Apply to chair a committee and lead discussions.</p>
                 </div>
 
-                {/* Academic Questions */}
-                <div>
-                  <h3 className="font-serif text-lg sm:text-xl font-bold text-white mb-4 flex items-center gap-2 border-b border-white/8 pb-2">
-                    <HelpCircle className="w-5 h-5 text-amber-400" />
-                    <span>Academic & Procedural Questions</span>
-                  </h3>
+                <form onSubmit={(e) => handleGenericSubmit(e, validateChairboard)} className="space-y-8">
+                  {/* Personal Details */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Personal Details</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Full Name</label>
+                        <input
+                          type="text"
+                          value={chairboardForm.fullName}
+                          onChange={(e) => setChairboardForm({ ...chairboardForm, fullName: e.target.value })}
+                          placeholder="Your full name"
+                          maxLength={100}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.fullName ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
+                        />
+                        {errors.fullName && <p className="text-[11px] text-red-400 mt-1">{errors.fullName}</p>}
+                      </div>
 
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">
-                        AI Detection & Suspicion Handling *
-                      </label>
-                      <textarea
-                        rows={3}
-                        value={chairboardForm.qAiSuspicion}
-                        onChange={(e) => setChairboardForm({ ...chairboardForm, qAiSuspicion: e.target.value })}
-                        placeholder="How do you handle suspicion of AI-generated content?"
-                        className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-amber-500"
-                      />
-                      {errors.qAiSuspicion && <p className="text-[11px] text-red-400 mt-1">{errors.qAiSuspicion}</p>}
-                    </div>
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">School</label>
+                        <input
+                          type="text"
+                          value={chairboardForm.school}
+                          onChange={(e) => setChairboardForm({ ...chairboardForm, school: e.target.value })}
+                          placeholder="Your school or institution"
+                          maxLength={150}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.school ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
+                        />
+                        {errors.school && <p className="text-[11px] text-red-400 mt-1">{errors.school}</p>}
+                      </div>
 
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">
-                        Resolution & Working Paper Approval Standards *
-                      </label>
-                      <textarea
-                        rows={3}
-                        value={chairboardForm.qFinalDocuments}
-                        onChange={(e) => setChairboardForm({ ...chairboardForm, qFinalDocuments: e.target.value })}
-                        placeholder="What criteria do you evaluate for final resolution papers?"
-                        className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-amber-500"
-                      />
-                      {errors.qFinalDocuments && <p className="text-[11px] text-red-400 mt-1">{errors.qFinalDocuments}</p>}
-                    </div>
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Grade</label>
+                        <select
+                          value={chairboardForm.grade}
+                          onChange={(e) => setChairboardForm({ ...chairboardForm, grade: e.target.value })}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.grade ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
+                        >
+                          <option value="">Select Grade</option>
+                          {gradeOptions.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+                        </select>
+                        {errors.grade && <p className="text-[11px] text-red-400 mt-1">{errors.grade}</p>}
+                      </div>
 
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">
-                        Caucus Disagreement Mediation *
-                      </label>
-                      <textarea
-                        rows={3}
-                        value={chairboardForm.qDisagreement}
-                        onChange={(e) => setChairboardForm({ ...chairboardForm, qDisagreement: e.target.value })}
-                        placeholder="How do you mediate conflicts between opposing delegate blocs?"
-                        className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-amber-500"
-                      />
-                      {errors.qDisagreement && <p className="text-[11px] text-red-400 mt-1">{errors.qDisagreement}</p>}
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Email</label>
+                        <input
+                          type="email"
+                          value={chairboardForm.email}
+                          onChange={(e) => setChairboardForm({ ...chairboardForm, email: e.target.value })}
+                          placeholder="you@example.com"
+                          maxLength={100}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.email ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
+                        />
+                        {errors.email && <p className="text-[11px] text-red-400 mt-1">{errors.email}</p>}
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Phone</label>
+                        <input
+                          type="tel"
+                          value={chairboardForm.phone}
+                          onChange={(e) => setChairboardForm({ ...chairboardForm, phone: e.target.value })}
+                          placeholder="0555 000 00 00"
+                          maxLength={25}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.phone ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
+                        />
+                        {errors.phone && <p className="text-[11px] text-red-400 mt-1">{errors.phone}</p>}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Motivation Letter */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-mono text-slate-300 uppercase">
-                      Motivation Letter * (Min 150 Characters)
-                    </label>
-                    <span className={`text-[11px] font-mono ${chairboardForm.motivationLetter.length >= 150 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                      {chairboardForm.motivationLetter.length} / 150
-                    </span>
+                  {/* MUN Experience */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">MUN Experience</h3>
+                    <div>
+                      <label className="block text-xs text-slate-300 mb-1 font-medium">Experience List (Optional)</label>
+                      <textarea
+                        rows={4}
+                        value={chairboardForm.expList}
+                        onChange={(e) => setChairboardForm({ ...chairboardForm, expList: e.target.value })}
+                        placeholder="List your previous MUN conferences, committees, and awards. Leave blank if this is your first conference."
+                        maxLength={3000}
+                        className="w-full px-4 py-2.5 rounded-lg bg-black/40 border border-white/12 text-sm text-white focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
                   </div>
-                  <textarea
-                    rows={5}
-                    value={chairboardForm.motivationLetter}
-                    onChange={(e) => setChairboardForm({ ...chairboardForm, motivationLetter: e.target.value })}
-                    placeholder="Write your chairboard motivation letter..."
-                    className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-amber-500"
-                  />
-                  {errors.motivationLetter && <p className="text-[11px] text-red-400 mt-1">{errors.motivationLetter}</p>}
-                </div>
 
-                <div className="pt-4 border-t border-white/8 flex justify-end">
+                  {/* Committee Preferences */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Committee Preferences</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">1st Choice</label>
+                        <select
+                          value={chairboardForm.pref1}
+                          onChange={(e) => setChairboardForm({ ...chairboardForm, pref1: e.target.value })}
+                          className="w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border border-white/12 text-sm text-white focus:outline-none focus:border-amber-500"
+                        >
+                          {getFilteredCommitteeOptions(chairboardForm.pref1, [chairboardForm.pref2, chairboardForm.pref3]).map(c => (
+                            <option key={c.value} value={c.value} disabled={c.disabled}>{c.label}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">2nd Choice</label>
+                        <select
+                          value={chairboardForm.pref2}
+                          onChange={(e) => setChairboardForm({ ...chairboardForm, pref2: e.target.value })}
+                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.pref2 ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
+                        >
+                          <option value="">Select 2nd Choice</option>
+                          {getFilteredCommitteeOptions(chairboardForm.pref2, [chairboardForm.pref1, chairboardForm.pref3]).map(c => (
+                            <option key={c.value} value={c.value} disabled={c.disabled}>{c.label}</option>
+                          ))}
+                        </select>
+                        {errors.pref2 && <p className="text-[11px] text-red-400 mt-1">{errors.pref2}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">3rd Choice</label>
+                        <select
+                          value={chairboardForm.pref3}
+                          onChange={(e) => setChairboardForm({ ...chairboardForm, pref3: e.target.value })}
+                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.pref3 ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
+                        >
+                          <option value="">Select 3rd Choice</option>
+                          {getFilteredCommitteeOptions(chairboardForm.pref3, [chairboardForm.pref1, chairboardForm.pref2]).map(c => (
+                            <option key={c.value} value={c.value} disabled={c.disabled}>{c.label}</option>
+                          ))}
+                        </select>
+                        {errors.pref3 && <p className="text-[11px] text-red-400 mt-1">{errors.pref3}</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Motivation */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Motivation</h3>
+                    <div>
+                      <label className="block text-xs text-slate-300 mb-1.5 font-medium">Motivation Letter (Min. 150 characters)</label>
+                      <textarea
+                        rows={6}
+                        value={chairboardForm.motivationLetter}
+                        onChange={(e) => setChairboardForm({ ...chairboardForm, motivationLetter: e.target.value })}
+                        placeholder="Why do you want to chair at AlaçatıMUN? Describe your leadership style and what you bring to the committee."
+                        maxLength={5000}
+                        className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.motivationLetter ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
+                      />
+                      {errors.motivationLetter && <p className="text-[11px] text-red-400 mt-1">{errors.motivationLetter}</p>}
+                    </div>
+                  </div>
+
+                  {/* Technical Details */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Technical Details (Optional)</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Sample Crisis Directive (for crisis directors)</label>
+                        <textarea
+                          rows={4}
+                          value={chairboardForm.crisisDirective}
+                          onChange={(e) => setChairboardForm({ ...chairboardForm, crisisDirective: e.target.value })}
+                          placeholder="If you are applying as a Crisis Director, share a sample directive you would inject into a committee. Leave blank if you are applying for a GA committee."
+                          maxLength={3000}
+                          className="w-full px-4 py-2.5 rounded-lg bg-black/40 border border-white/12 text-sm text-white focus:outline-none focus:border-amber-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">GA Procedure (for GA chairs)</label>
+                        <textarea
+                          rows={4}
+                          value={chairboardForm.gaProcedure}
+                          onChange={(e) => setChairboardForm({ ...chairboardForm, gaProcedure: e.target.value })}
+                          placeholder="If you are applying for a GA committee, walk us through how you would run the session and establish speakers list. Leave blank if you are applying as a Crisis Director."
+                          maxLength={3000}
+                          className="w-full px-4 py-2.5 rounded-lg bg-black/40 border border-white/12 text-sm text-white focus:outline-none focus:border-amber-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Scenario Questions */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Scenario Questions</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">
+                          You have listened to a delegate's speeches and you suspect that the delegate is using AI. What would you do? *
+                        </label>
+                        <textarea
+                          rows={4}
+                          value={chairboardForm.qAiSuspicion}
+                          onChange={(e) => setChairboardForm({ ...chairboardForm, qAiSuspicion: e.target.value })}
+                          placeholder="Your answer..."
+                          maxLength={2000}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.qAiSuspicion ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
+                        />
+                        {errors.qAiSuspicion && <p className="text-[11px] text-red-400 mt-1">{errors.qAiSuspicion}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">
+                          Explain the final documents and their details (Resolution Paper, Declaration, Communiqué, Final Directive) *
+                        </label>
+                        <textarea
+                          rows={4}
+                          value={chairboardForm.qFinalDocuments}
+                          onChange={(e) => setChairboardForm({ ...chairboardForm, qFinalDocuments: e.target.value })}
+                          placeholder="Your answer..."
+                          maxLength={3000}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.qFinalDocuments ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
+                        />
+                        {errors.qFinalDocuments && <p className="text-[11px] text-red-400 mt-1">{errors.qFinalDocuments}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">
+                          One of your delegates is having troubles in writing a directive. What would you do to solve this issue? (for crisis applicants)
+                        </label>
+                        <textarea
+                          rows={4}
+                          value={chairboardForm.qDirectiveHelp}
+                          onChange={(e) => setChairboardForm({ ...chairboardForm, qDirectiveHelp: e.target.value })}
+                          placeholder="Your answer (Optional if not applying for crisis)..."
+                          maxLength={2000}
+                          className="w-full px-4 py-2.5 rounded-lg bg-black/40 border border-white/12 text-sm text-white focus:outline-none focus:border-amber-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">
+                          There is 1 session left and half of the final document hasn't been written. What would you do in the last session to finish the final document?
+                        </label>
+                        <textarea
+                          rows={4}
+                          value={chairboardForm.qResolutionPaper}
+                          onChange={(e) => setChairboardForm({ ...chairboardForm, qResolutionPaper: e.target.value })}
+                          placeholder="Your answer (Optional if not applying for GA)..."
+                          maxLength={3000}
+                          className="w-full px-4 py-2.5 rounded-lg bg-black/40 border border-white/12 text-sm text-white focus:outline-none focus:border-amber-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">
+                          You and another Chairboard member had different opinions regarding a procedural matter, and the other Chairboard member insisted that their opinion was correct and this disagreement started to affect the committee. What would you do to resolve this issue? *
+                        </label>
+                        <textarea
+                          rows={4}
+                          value={chairboardForm.qDisagreement}
+                          onChange={(e) => setChairboardForm({ ...chairboardForm, qDisagreement: e.target.value })}
+                          placeholder="Your answer..."
+                          maxLength={3000}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.qDisagreement ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
+                        />
+                        {errors.qDisagreement && <p className="text-[11px] text-red-400 mt-1">{errors.qDisagreement}</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Logistics */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Logistics *</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Which shuttle will you use?</label>
+                        <select
+                          value={chairboardForm.shuttle}
+                          onChange={(e) => setChairboardForm({ ...chairboardForm, shuttle: e.target.value })}
+                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.shuttle ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
+                        >
+                          {shuttleOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        </select>
+                        {errors.shuttle && <p className="text-[11px] text-red-400 mt-1">{errors.shuttle}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Will you be using the accommodation?</label>
+                        <select
+                          value={chairboardForm.accommodation}
+                          onChange={(e) => setChairboardForm({ ...chairboardForm, accommodation: e.target.value })}
+                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.accommodation ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
+                        >
+                          {accommodationOptions.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+                        </select>
+                        {errors.accommodation && <p className="text-[11px] text-red-400 mt-1">{errors.accommodation}</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Details */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">
+                      Additional Details <span className="text-slate-500 text-xs font-normal">(Optional)</span>
+                    </h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Anything you want to add</label>
+                        <textarea
+                          rows={3}
+                          value={chairboardForm.message}
+                          onChange={(e) => setChairboardForm({ ...chairboardForm, message: e.target.value })}
+                          placeholder="Any additional information you'd like us to know..."
+                          maxLength={2000}
+                          className="w-full px-4 py-2.5 rounded-lg bg-black/40 border border-white/12 text-sm text-white focus:outline-none focus:border-amber-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">References</label>
+                        <textarea
+                          rows={3}
+                          value={chairboardForm.references}
+                          onChange={(e) => setChairboardForm({ ...chairboardForm, references: e.target.value })}
+                          placeholder="Names and contact details of people who can speak to your MUN experience (e.g. a previous chair or faculty advisor)."
+                          maxLength={1000}
+                          className="w-full px-4 py-2.5 rounded-lg bg-black/40 border border-white/12 text-sm text-white focus:outline-none focus:border-amber-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="btn-primary w-full sm:w-auto text-xs sm:text-sm !py-3.5 !px-8"
+                    className="btn-primary w-full text-sm !py-3.5"
                   >
-                    <span>{isSubmitting ? 'SUBMITTING...' : 'SUBMIT APPLICATION'}</span>
-                    <Send className="w-4 h-4 ml-1.5" />
+                    {isSubmitting ? 'Submitting...' : 'Submit Application'}
                   </button>
-                </div>
-              </form>
+                </form>
+              </div>
             )}
 
             {/* ═══ 4. ADMIN STAFF FORM ═══ */}
             {activeRole === 'admin' && (
-              <form 
-                onSubmit={(e) => handleGenericSubmit(e, validateAdmin)}
-                className="p-6 sm:p-10 rounded-2xl bg-[#0c0c14]/95 border border-white/10 shadow-2xl space-y-8 backdrop-blur-xl"
-              >
-                <div>
-                  <h3 className="font-serif text-lg sm:text-xl font-bold text-white mb-4 flex items-center gap-2 border-b border-white/8 pb-2">
-                    <Settings className="w-5 h-5 text-cyan-400" />
-                    <span>Admin Staff Details</span>
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="p-6 sm:p-10 rounded-2xl bg-[#0c0c14]/95 border border-white/10 shadow-2xl backdrop-blur-xl">
+                <div className="text-center mb-8 pb-6 border-b border-white/10">
+                  <h1 className="text-2xl sm:text-4xl font-bold text-white mb-2 font-serif">Admin Staff Registration</h1>
+                  <p className="text-xs sm:text-sm text-slate-400">Join our organising team behind the scenes.</p>
+                </div>
+
+                <form onSubmit={(e) => handleGenericSubmit(e, validateAdmin)} className="space-y-8">
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Personal Details</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Full Name</label>
+                        <input
+                          type="text"
+                          value={adminForm.fullName}
+                          onChange={(e) => setAdminForm({ ...adminForm, fullName: e.target.value })}
+                          placeholder="Your full name"
+                          maxLength={100}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.fullName ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
+                        />
+                        {errors.fullName && <p className="text-[11px] text-red-400 mt-1">{errors.fullName}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">School</label>
+                        <input
+                          type="text"
+                          value={adminForm.school}
+                          onChange={(e) => setAdminForm({ ...adminForm, school: e.target.value })}
+                          placeholder="Your school or institution"
+                          maxLength={150}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.school ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
+                        />
+                        {errors.school && <p className="text-[11px] text-red-400 mt-1">{errors.school}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Grade</label>
+                        <select
+                          value={adminForm.grade}
+                          onChange={(e) => setAdminForm({ ...adminForm, grade: e.target.value })}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.grade ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
+                        >
+                          <option value="">Select Grade</option>
+                          {gradeOptions.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+                        </select>
+                        {errors.grade && <p className="text-[11px] text-red-400 mt-1">{errors.grade}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Email</label>
+                        <input
+                          type="email"
+                          value={adminForm.email}
+                          onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
+                          placeholder="you@example.com"
+                          maxLength={100}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.email ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
+                        />
+                        {errors.email && <p className="text-[11px] text-red-400 mt-1">{errors.email}</p>}
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Phone</label>
+                        <input
+                          type="tel"
+                          value={adminForm.phone}
+                          onChange={(e) => setAdminForm({ ...adminForm, phone: e.target.value })}
+                          placeholder="0555 000 00 00"
+                          maxLength={25}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.phone ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
+                        />
+                        {errors.phone && <p className="text-[11px] text-red-400 mt-1">{errors.phone}</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Experience & References */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Experience & References (Optional)</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Organization Experience</label>
+                        <textarea
+                          rows={4}
+                          value={adminForm.orgExpList}
+                          onChange={(e) => setAdminForm({ ...adminForm, orgExpList: e.target.value })}
+                          placeholder="List any clubs, student councils, event organizations, or other groups you've been part of. Leave blank if none."
+                          maxLength={3000}
+                          className="w-full px-4 py-2.5 rounded-lg bg-black/40 border border-white/12 text-sm text-white focus:outline-none focus:border-[#00b4d8]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">References</label>
+                        <textarea
+                          rows={3}
+                          value={adminForm.references}
+                          onChange={(e) => setAdminForm({ ...adminForm, references: e.target.value })}
+                          placeholder="Names and contact details of teachers or coordinators who can speak to your experience."
+                          maxLength={1000}
+                          className="w-full px-4 py-2.5 rounded-lg bg-black/40 border border-white/12 text-sm text-white focus:outline-none focus:border-[#00b4d8]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Logistics */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Logistics *</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Which shuttle will you use?</label>
+                        <select
+                          value={adminForm.shuttle}
+                          onChange={(e) => setAdminForm({ ...adminForm, shuttle: e.target.value })}
+                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.shuttle ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
+                        >
+                          {shuttleOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        </select>
+                        {errors.shuttle && <p className="text-[11px] text-red-400 mt-1">{errors.shuttle}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Will you be using the accommodation?</label>
+                        <select
+                          value={adminForm.accommodation}
+                          onChange={(e) => setAdminForm({ ...adminForm, accommodation: e.target.value })}
+                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.accommodation ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
+                        >
+                          {accommodationOptions.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+                        </select>
+                        {errors.accommodation && <p className="text-[11px] text-red-400 mt-1">{errors.accommodation}</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Details */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Additional Details (Optional)</h3>
                     <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Full Name *</label>
-                      <input
-                        type="text"
-                        value={adminForm.fullName}
-                        onChange={(e) => setAdminForm({ ...adminForm, fullName: e.target.value })}
-                        placeholder="Full Name"
-                        className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-cyan-500"
-                      />
-                      {errors.fullName && <p className="text-[11px] text-red-400 mt-1">{errors.fullName}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">School *</label>
-                      <input
-                        type="text"
-                        value={adminForm.school}
-                        onChange={(e) => setAdminForm({ ...adminForm, school: e.target.value })}
-                        placeholder="School Name"
-                        className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-cyan-500"
-                      />
-                      {errors.school && <p className="text-[11px] text-red-400 mt-1">{errors.school}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Grade *</label>
-                      <select
-                        value={adminForm.grade}
-                        onChange={(e) => setAdminForm({ ...adminForm, grade: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-[#0c0c14] border border-white/12 text-sm text-white focus:outline-none focus:border-cyan-500"
-                      >
-                        <option value="">Select Grade</option>
-                        {gradeOptions.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
-                      </select>
-                      {errors.grade && <p className="text-[11px] text-red-400 mt-1">{errors.grade}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Phone *</label>
-                      <input
-                        type="tel"
-                        value={adminForm.phone}
-                        onChange={(e) => setAdminForm({ ...adminForm, phone: e.target.value })}
-                        placeholder="+90 5XX..."
-                        className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-cyan-500"
-                      />
-                      {errors.phone && <p className="text-[11px] text-red-400 mt-1">{errors.phone}</p>}
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Email *</label>
-                      <input
-                        type="email"
-                        value={adminForm.email}
-                        onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
-                        placeholder="admin@example.com"
-                        className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-cyan-500"
-                      />
-                      {errors.email && <p className="text-[11px] text-red-400 mt-1">{errors.email}</p>}
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">
-                        Past Organization Experience
-                      </label>
+                      <label className="block text-xs text-slate-300 mb-1 font-medium">Anything you want to add</label>
                       <textarea
                         rows={3}
-                        value={adminForm.orgExpList}
-                        onChange={(e) => setAdminForm({ ...adminForm, orgExpList: e.target.value })}
-                        placeholder="List previous organizing experience..."
-                        className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-cyan-500"
+                        value={adminForm.message}
+                        onChange={(e) => setAdminForm({ ...adminForm, message: e.target.value })}
+                        placeholder="Any additional information you'd like us to know..."
+                        maxLength={2000}
+                        className="w-full px-4 py-2.5 rounded-lg bg-black/40 border border-white/12 text-sm text-white focus:outline-none focus:border-[#00b4d8]"
                       />
                     </div>
                   </div>
-                </div>
 
-                <div className="pt-4 border-t border-white/8 flex justify-end">
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="btn-primary w-full sm:w-auto text-xs sm:text-sm !py-3.5 !px-8"
+                    className="btn-primary w-full text-sm !py-3.5"
                   >
-                    <span>{isSubmitting ? 'SUBMITTING...' : 'SUBMIT APPLICATION'}</span>
-                    <Send className="w-4 h-4 ml-1.5" />
+                    {isSubmitting ? 'Submitting...' : 'Submit Application'}
                   </button>
-                </div>
-              </form>
+                </form>
+              </div>
             )}
 
             {/* ═══ 5. PRESS CORPS FORM ═══ */}
             {activeRole === 'press' && (
-              <form 
-                onSubmit={(e) => handleGenericSubmit(e, validatePress)}
-                className="p-6 sm:p-10 rounded-2xl bg-[#0c0c14]/95 border border-white/10 shadow-2xl space-y-8 backdrop-blur-xl"
-              >
-                <div>
-                  <h3 className="font-serif text-lg sm:text-xl font-bold text-white mb-4 flex items-center gap-2 border-b border-white/8 pb-2">
-                    <Camera className="w-5 h-5 text-white" />
-                    <span>Press Details</span>
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Full Name *</label>
-                      <input
-                        type="text"
-                        value={pressForm.fullName}
-                        onChange={(e) => setPressForm({ ...pressForm, fullName: e.target.value })}
-                        placeholder="Full Name"
-                        className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-white"
-                      />
-                      {errors.fullName && <p className="text-[11px] text-red-400 mt-1">{errors.fullName}</p>}
-                    </div>
+              <div className="p-6 sm:p-10 rounded-2xl bg-[#0c0c14]/95 border border-white/10 shadow-2xl backdrop-blur-xl">
+                <div className="text-center mb-8 pb-6 border-b border-white/10">
+                  <h1 className="text-2xl sm:text-4xl font-bold text-white mb-2 font-serif">Press Corps Registration</h1>
+                  <p className="text-xs sm:text-sm text-slate-400">Cover AlaçatıMUN '26 as a journalist or photographer.</p>
+                </div>
 
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">School *</label>
-                      <input
-                        type="text"
-                        value={pressForm.school}
-                        onChange={(e) => setPressForm({ ...pressForm, school: e.target.value })}
-                        placeholder="School Name"
-                        className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-white"
-                      />
-                      {errors.school && <p className="text-[11px] text-red-400 mt-1">{errors.school}</p>}
-                    </div>
+                <form onSubmit={(e) => handleGenericSubmit(e, validatePress)} className="space-y-8">
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Personal Details</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Full Name</label>
+                        <input
+                          type="text"
+                          value={pressForm.fullName}
+                          onChange={(e) => setPressForm({ ...pressForm, fullName: e.target.value })}
+                          placeholder="Your full name"
+                          maxLength={100}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.fullName ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
+                        />
+                        {errors.fullName && <p className="text-[11px] text-red-400 mt-1">{errors.fullName}</p>}
+                      </div>
 
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Grade *</label>
-                      <select
-                        value={pressForm.grade}
-                        onChange={(e) => setPressForm({ ...pressForm, grade: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-[#0c0c14] border border-white/12 text-sm text-white focus:outline-none focus:border-white"
-                      >
-                        <option value="">Select Grade</option>
-                        {gradeOptions.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
-                      </select>
-                      {errors.grade && <p className="text-[11px] text-red-400 mt-1">{errors.grade}</p>}
-                    </div>
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">School</label>
+                        <input
+                          type="text"
+                          value={pressForm.school}
+                          onChange={(e) => setPressForm({ ...pressForm, school: e.target.value })}
+                          placeholder="Your school or institution"
+                          maxLength={150}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.school ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
+                        />
+                        {errors.school && <p className="text-[11px] text-red-400 mt-1">{errors.school}</p>}
+                      </div>
 
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Phone *</label>
-                      <input
-                        type="tel"
-                        value={pressForm.phone}
-                        onChange={(e) => setPressForm({ ...pressForm, phone: e.target.value })}
-                        placeholder="+90 5XX..."
-                        className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-white"
-                      />
-                      {errors.phone && <p className="text-[11px] text-red-400 mt-1">{errors.phone}</p>}
-                    </div>
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Grade</label>
+                        <select
+                          value={pressForm.grade}
+                          onChange={(e) => setPressForm({ ...pressForm, grade: e.target.value })}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.grade ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
+                        >
+                          <option value="">Select Grade</option>
+                          {gradeOptions.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+                        </select>
+                        {errors.grade && <p className="text-[11px] text-red-400 mt-1">{errors.grade}</p>}
+                      </div>
 
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Email *</label>
-                      <input
-                        type="email"
-                        value={pressForm.email}
-                        onChange={(e) => setPressForm({ ...pressForm, email: e.target.value })}
-                        placeholder="press@example.com"
-                        className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-white"
-                      />
-                      {errors.email && <p className="text-[11px] text-red-400 mt-1">{errors.email}</p>}
-                    </div>
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Email</label>
+                        <input
+                          type="email"
+                          value={pressForm.email}
+                          onChange={(e) => setPressForm({ ...pressForm, email: e.target.value })}
+                          placeholder="you@example.com"
+                          maxLength={100}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.email ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
+                        />
+                        {errors.email && <p className="text-[11px] text-red-400 mt-1">{errors.email}</p>}
+                      </div>
 
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Camera / Equipment Model</label>
-                      <input
-                        type="text"
-                        value={pressForm.cameraModel}
-                        onChange={(e) => setPressForm({ ...pressForm, cameraModel: e.target.value })}
-                        placeholder="e.g. Sony A7 III, Canon R6..."
-                        className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-white"
-                      />
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Phone</label>
+                        <input
+                          type="tel"
+                          value={pressForm.phone}
+                          onChange={(e) => setPressForm({ ...pressForm, phone: e.target.value })}
+                          placeholder="0555 000 00 00"
+                          maxLength={25}
+                          className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.phone ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
+                        />
+                        {errors.phone && <p className="text-[11px] text-red-400 mt-1">{errors.phone}</p>}
+                      </div>
                     </div>
+                  </div>
 
+                  {/* Experience & Equipment */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Experience & Equipment (Optional)</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Organization / Publication Experience</label>
+                        <textarea
+                          rows={4}
+                          value={pressForm.orgExpList}
+                          onChange={(e) => setPressForm({ ...pressForm, orgExpList: e.target.value })}
+                          placeholder="List any newspapers, magazines, photography clubs, school publications, or other organizations you've been part of. Leave blank if none."
+                          maxLength={3000}
+                          className="w-full px-4 py-2.5 rounded-lg bg-black/40 border border-white/12 text-sm text-white focus:outline-none focus:border-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Camera Brand / Model</label>
+                        <input
+                          type="text"
+                          value={pressForm.cameraModel}
+                          onChange={(e) => setPressForm({ ...pressForm, cameraModel: e.target.value })}
+                          placeholder="e.g. Canon EOS 90D, Sony α6400, iPhone 15 Pro"
+                          maxLength={150}
+                          className="w-full px-4 py-2.5 rounded-lg bg-black/40 border border-white/12 text-sm text-white focus:outline-none focus:border-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">References</label>
+                        <textarea
+                          rows={3}
+                          value={pressForm.references}
+                          onChange={(e) => setPressForm({ ...pressForm, references: e.target.value })}
+                          placeholder="Names and contact details of teachers, editors, or coordinators who can speak to your work."
+                          maxLength={1000}
+                          className="w-full px-4 py-2.5 rounded-lg bg-black/40 border border-white/12 text-sm text-white focus:outline-none focus:border-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Logistics */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Logistics *</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Which shuttle will you use?</label>
+                        <select
+                          value={pressForm.shuttle}
+                          onChange={(e) => setPressForm({ ...pressForm, shuttle: e.target.value })}
+                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.shuttle ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
+                        >
+                          {shuttleOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        </select>
+                        {errors.shuttle && <p className="text-[11px] text-red-400 mt-1">{errors.shuttle}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1 font-medium">Will you be using the accommodation?</label>
+                        <select
+                          value={pressForm.accommodation}
+                          onChange={(e) => setPressForm({ ...pressForm, accommodation: e.target.value })}
+                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.accommodation ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
+                        >
+                          {accommodationOptions.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+                        </select>
+                        {errors.accommodation && <p className="text-[11px] text-red-400 mt-1">{errors.accommodation}</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Details */}
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Additional Details (Optional)</h3>
                     <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 uppercase">Portfolio Link</label>
-                      <input
-                        type="url"
-                        value={pressForm.references}
-                        onChange={(e) => setPressForm({ ...pressForm, references: e.target.value })}
-                        placeholder="https://..."
-                        className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/12 text-sm text-white focus:outline-none focus:border-white"
+                      <label className="block text-xs text-slate-300 mb-1 font-medium">Anything you want to add</label>
+                      <textarea
+                        rows={3}
+                        value={pressForm.message}
+                        onChange={(e) => setPressForm({ ...pressForm, message: e.target.value })}
+                        placeholder="Any additional information you'd like us to know..."
+                        maxLength={2000}
+                        className="w-full px-4 py-2.5 rounded-lg bg-black/40 border border-white/12 text-sm text-white focus:outline-none focus:border-white"
                       />
                     </div>
                   </div>
-                </div>
 
-                <div className="pt-4 border-t border-white/8 flex justify-end">
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="btn-primary w-full sm:w-auto text-xs sm:text-sm !py-3.5 !px-8"
+                    className="btn-primary w-full text-sm !py-3.5"
                   >
-                    <span>{isSubmitting ? 'SUBMITTING...' : 'SUBMIT APPLICATION'}</span>
-                    <Send className="w-4 h-4 ml-1.5" />
+                    {isSubmitting ? 'Submitting...' : 'Submit Application'}
                   </button>
-                </div>
-              </form>
+                </form>
+              </div>
             )}
 
           </div>
