@@ -64,21 +64,6 @@ const gradeOptions = [
   { value: '12th Grade', label: '12th Grade' }
 ];
 
-const shuttleOptions = [
-  { value: '', label: 'Select a shuttle...' },
-  { value: 'Halkapınar', label: 'Halkapınar' },
-  { value: 'Karşıyaka', label: 'Karşıyaka' },
-  { value: 'Fahrettin Altay', label: 'Fahrettin Altay' },
-  { value: 'Torbalı', label: 'Torbalı' },
-  { value: 'I will not use a shuttle', label: 'I will not use a shuttle' }
-];
-
-const accommodationOptions = [
-  { value: '', label: 'Select...' },
-  { value: 'yes', label: 'Yes' },
-  { value: 'no', label: 'No' }
-];
-
 export const ApplyPage: React.FC<ApplyPageProps> = ({
   initialCommitteeId,
   onNavigate
@@ -100,9 +85,7 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     committeePreference3: '',
     motivationLetter: '',
     message: '',
-    references: '',
-    shuttle: '',
-    accommodation: ''
+    references: ''
   });
 
   // ── Delegation Form State ──
@@ -115,9 +98,7 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     phone: '',
     allEmails: '',
     allPhones: '',
-    message: '',
-    shuttle: '',
-    accommodation: ''
+    message: ''
   });
 
   // ── Chairboard Form State ──
@@ -139,8 +120,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     qDirectiveHelp: '',
     qResolutionPaper: '',
     qDisagreement: '',
-    shuttle: '',
-    accommodation: '',
     message: '',
     references: ''
   });
@@ -154,8 +133,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     phone: '',
     orgExpList: '',
     references: '',
-    shuttle: '',
-    accommodation: '',
     message: ''
   });
 
@@ -169,8 +146,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     orgExpList: '',
     cameraModel: '',
     references: '',
-    shuttle: '',
-    accommodation: '',
     message: ''
   });
 
@@ -216,8 +191,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     if (delegateForm.motivationLetter.trim().length < 150) {
       errs.motivationLetter = `Motivation letter must be at least 150 characters. (${delegateForm.motivationLetter.trim().length}/150)`;
     }
-    if (!delegateForm.shuttle) errs.shuttle = 'Please select your shuttle preference.';
-    if (!delegateForm.accommodation) errs.accommodation = 'Please select your accommodation preference.';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -235,8 +208,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     if (!delegationForm.phone.trim()) errs.phone = 'Phone number is required';
     if (!delegationForm.allEmails.trim()) errs.allEmails = 'All member emails are required';
     if (!delegationForm.allPhones.trim()) errs.allPhones = 'All member phones are required';
-    if (!delegationForm.shuttle) errs.shuttle = 'Please select your shuttle preference';
-    if (!delegationForm.accommodation) errs.accommodation = 'Please select your accommodation preference';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -260,8 +231,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     if (!chairboardForm.qAiSuspicion.trim()) errs.qAiSuspicion = 'Please answer this question';
     if (!chairboardForm.qFinalDocuments.trim()) errs.qFinalDocuments = 'Please answer this question';
     if (!chairboardForm.qDisagreement.trim()) errs.qDisagreement = 'Please answer this question';
-    if (!chairboardForm.shuttle) errs.shuttle = 'Please select your shuttle preference';
-    if (!chairboardForm.accommodation) errs.accommodation = 'Please select your accommodation preference';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -276,8 +245,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
       errs.email = 'Please enter a valid email address';
     }
     if (!adminForm.phone.trim()) errs.phone = 'Phone number is required';
-    if (!adminForm.shuttle) errs.shuttle = 'Please select your shuttle preference';
-    if (!adminForm.accommodation) errs.accommodation = 'Please select your accommodation preference';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -292,8 +259,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
       errs.email = 'Please enter a valid email address';
     }
     if (!pressForm.phone.trim()) errs.phone = 'Phone number is required';
-    if (!pressForm.shuttle) errs.shuttle = 'Please select your shuttle preference';
-    if (!pressForm.accommodation) errs.accommodation = 'Please select your accommodation preference';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -391,7 +356,7 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
           </div>
         )}
 
-        {/* ═══ INDIVIDUAL REGISTRATION PAGES (EXACT ALAÇATIMUN FORMS) ═══ */}
+        {/* ═══ INDIVIDUAL REGISTRATION PAGES ═══ */}
         {activeRole !== 'hub' && (
           <div className="w-full">
             
@@ -577,7 +542,7 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                         className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.motivationLetter ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
                       />
 
-                      {/* AlaçatıMUN Character Bar */}
+                      {/* Character Bar */}
                       <div className="mt-2 h-1 bg-white/10 rounded-full overflow-hidden">
                         <div 
                           className="h-full transition-all duration-300 bg-[#00b4d8]"
@@ -587,36 +552,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                       <div className="flex justify-between items-center text-[11px] text-slate-400 mt-1">
                         {errors.motivationLetter ? <span className="text-red-400">{errors.motivationLetter}</span> : <span />}
                         <span>{delegateForm.motivationLetter.length} / 150</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Logistics */}
-                  <div>
-                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Logistics *</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs text-slate-300 mb-1 font-medium">Which shuttle will you use?</label>
-                        <select
-                          value={delegateForm.shuttle}
-                          onChange={(e) => setDelegateForm({ ...delegateForm, shuttle: e.target.value })}
-                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.shuttle ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
-                        >
-                          {shuttleOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                        </select>
-                        {errors.shuttle && <p className="text-[11px] text-red-400 mt-1">{errors.shuttle}</p>}
-                      </div>
-
-                      <div>
-                        <label className="block text-xs text-slate-300 mb-1 font-medium">Will you be using the accommodation?</label>
-                        <select
-                          value={delegateForm.accommodation}
-                          onChange={(e) => setDelegateForm({ ...delegateForm, accommodation: e.target.value })}
-                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.accommodation ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
-                        >
-                          {accommodationOptions.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
-                        </select>
-                        {errors.accommodation && <p className="text-[11px] text-red-400 mt-1">{errors.accommodation}</p>}
                       </div>
                     </div>
                   </div>
@@ -784,36 +719,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                           className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.allPhones ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
                         />
                         {errors.allPhones && <p className="text-[11px] text-red-400 mt-1">{errors.allPhones}</p>}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Logistics */}
-                  <div>
-                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Logistics *</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs text-slate-300 mb-1 font-medium">Which shuttle will you use?</label>
-                        <select
-                          value={delegationForm.shuttle}
-                          onChange={(e) => setDelegationForm({ ...delegationForm, shuttle: e.target.value })}
-                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.shuttle ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
-                        >
-                          {shuttleOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                        </select>
-                        {errors.shuttle && <p className="text-[11px] text-red-400 mt-1">{errors.shuttle}</p>}
-                      </div>
-
-                      <div>
-                        <label className="block text-xs text-slate-300 mb-1 font-medium">Will you be using the accommodation?</label>
-                        <select
-                          value={delegationForm.accommodation}
-                          onChange={(e) => setDelegationForm({ ...delegationForm, accommodation: e.target.value })}
-                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.accommodation ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
-                        >
-                          {accommodationOptions.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
-                        </select>
-                        {errors.accommodation && <p className="text-[11px] text-red-400 mt-1">{errors.accommodation}</p>}
                       </div>
                     </div>
                   </div>
@@ -1116,36 +1021,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Logistics */}
-                  <div>
-                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Logistics *</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs text-slate-300 mb-1 font-medium">Which shuttle will you use?</label>
-                        <select
-                          value={chairboardForm.shuttle}
-                          onChange={(e) => setChairboardForm({ ...chairboardForm, shuttle: e.target.value })}
-                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.shuttle ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
-                        >
-                          {shuttleOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                        </select>
-                        {errors.shuttle && <p className="text-[11px] text-red-400 mt-1">{errors.shuttle}</p>}
-                      </div>
-
-                      <div>
-                        <label className="block text-xs text-slate-300 mb-1 font-medium">Will you be using the accommodation?</label>
-                        <select
-                          value={chairboardForm.accommodation}
-                          onChange={(e) => setChairboardForm({ ...chairboardForm, accommodation: e.target.value })}
-                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.accommodation ? 'border-red-500' : 'border-white/12 focus:border-amber-500'}`}
-                        >
-                          {accommodationOptions.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
-                        </select>
-                        {errors.accommodation && <p className="text-[11px] text-red-400 mt-1">{errors.accommodation}</p>}
-                      </div>
-                    </div>
-                  </div>
-
                   {/* Additional Details */}
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-4">
@@ -1298,36 +1173,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Logistics */}
-                  <div>
-                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Logistics *</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs text-slate-300 mb-1 font-medium">Which shuttle will you use?</label>
-                        <select
-                          value={adminForm.shuttle}
-                          onChange={(e) => setAdminForm({ ...adminForm, shuttle: e.target.value })}
-                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.shuttle ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
-                        >
-                          {shuttleOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                        </select>
-                        {errors.shuttle && <p className="text-[11px] text-red-400 mt-1">{errors.shuttle}</p>}
-                      </div>
-
-                      <div>
-                        <label className="block text-xs text-slate-300 mb-1 font-medium">Will you be using the accommodation?</label>
-                        <select
-                          value={adminForm.accommodation}
-                          onChange={(e) => setAdminForm({ ...adminForm, accommodation: e.target.value })}
-                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.accommodation ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
-                        >
-                          {accommodationOptions.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
-                        </select>
-                        {errors.accommodation && <p className="text-[11px] text-red-400 mt-1">{errors.accommodation}</p>}
-                      </div>
-                    </div>
-                  </div>
-
                   {/* Additional Details */}
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-4">Additional Details (Optional)</h3>
@@ -1472,36 +1317,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                           maxLength={1000}
                           className="w-full px-4 py-2.5 rounded-lg bg-black/40 border border-white/12 text-sm text-white focus:outline-none focus:border-white"
                         />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Logistics */}
-                  <div>
-                    <h3 className="text-base sm:text-lg font-bold text-white mb-4">Logistics *</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs text-slate-300 mb-1 font-medium">Which shuttle will you use?</label>
-                        <select
-                          value={pressForm.shuttle}
-                          onChange={(e) => setPressForm({ ...pressForm, shuttle: e.target.value })}
-                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.shuttle ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
-                        >
-                          {shuttleOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                        </select>
-                        {errors.shuttle && <p className="text-[11px] text-red-400 mt-1">{errors.shuttle}</p>}
-                      </div>
-
-                      <div>
-                        <label className="block text-xs text-slate-300 mb-1 font-medium">Will you be using the accommodation?</label>
-                        <select
-                          value={pressForm.accommodation}
-                          onChange={(e) => setPressForm({ ...pressForm, accommodation: e.target.value })}
-                          className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0c0c14] border text-sm text-white focus:outline-none ${errors.accommodation ? 'border-red-500' : 'border-white/12 focus:border-white'}`}
-                        >
-                          {accommodationOptions.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
-                        </select>
-                        {errors.accommodation && <p className="text-[11px] text-red-400 mt-1">{errors.accommodation}</p>}
                       </div>
                     </div>
                   </div>
