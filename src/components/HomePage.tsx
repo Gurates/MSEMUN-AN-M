@@ -59,14 +59,25 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const minutesDigits = String(timeLeft.minutes).padStart(2, '0').split('');
   const secondsDigits = String(timeLeft.seconds).padStart(2, '0').split('');
 
-  // ── Draw a frame on the canvas (cover mode — fills viewport, no bars) ──
+  // ── Draw a frame on the canvas with fallback to nearest loaded frame ──
   const drawFrame = useCallback((index: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const img = imagesRef.current[index];
+    // Find target image or nearest loaded frame to avoid any black flicker
+    let img = imagesRef.current[index];
+    if (!img || !img.complete || img.naturalWidth === 0) {
+      for (let i = index - 1; i >= 0; i--) {
+        const fallback = imagesRef.current[i];
+        if (fallback && fallback.complete && fallback.naturalWidth > 0) {
+          img = fallback;
+          break;
+        }
+      }
+    }
+
     if (!img || !img.complete || img.naturalWidth === 0) return;
 
     const cw = canvas.width;
@@ -97,28 +108,53 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     drawFrame(currentFrameRef.current);
   }, [drawFrame]);
 
-  // ── Preload all 240 frames ──
+  // ── Smart Progressive Chunked Preloading (Bandwidth-Friendly) ──
   useEffect(() => {
-    let loaded = 0;
-    const images: HTMLImageElement[] = [];
-
-    for (let i = 0; i < TOTAL_FRAMES; i++) {
-      const img = new Image();
-      img.src = getFramePath(i);
-      img.onload = () => {
-        loaded++;
-        if (loaded === 1) {
-          sizeCanvas();
-          drawFrame(0);
-        }
-      };
-      img.onerror = () => { loaded++; };
-      images.push(img);
-    }
-
+    const images: HTMLImageElement[] = new Array(TOTAL_FRAMES);
     imagesRef.current = images;
+
+    // 1. High priority: Load 1st frame immediately so hero background appears with 0 delay
+    const firstImg = new Image();
+    firstImg.src = getFramePath(0);
+    firstImg.onload = () => {
+      images[0] = firstImg;
+      sizeCanvas();
+      drawFrame(0);
+    };
+    images[0] = firstImg;
+
+    // 2. Progressive background loading: Load remaining frames in batches of 4 with delays
+    let currentBatch = 1;
+    const BATCH_SIZE = 4;
+    let isCancelled = false;
+
+    const loadNextBatch = () => {
+      if (isCancelled || currentBatch >= TOTAL_FRAMES) return;
+
+      const end = Math.min(currentBatch + BATCH_SIZE, TOTAL_FRAMES);
+      for (let i = currentBatch; i < end; i++) {
+        const img = new Image();
+        img.src = getFramePath(i);
+        img.onload = () => {
+          images[i] = img;
+        };
+        images[i] = img;
+      }
+      currentBatch = end;
+
+      if (currentBatch < TOTAL_FRAMES) {
+        setTimeout(loadNextBatch, 35);
+      }
+    };
+
+    // Give browser initial quiet window so video intro buffers at full bandwidth
+    const timer = setTimeout(() => {
+      loadNextBatch();
+    }, 250);
+
     return () => {
-      images.forEach(img => { img.onload = null; img.onerror = null; });
+      isCancelled = true;
+      clearTimeout(timer);
     };
   }, [drawFrame, sizeCanvas]);
 

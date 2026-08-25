@@ -6,9 +6,25 @@ import { ApplyPage } from './components/ApplyPage';
 import { VideoIntro } from './components/VideoIntro';
 
 export const App: React.FC = () => {
-  const [showIntro, setShowIntro] = useState(true);
+  // Check if intro was already played in this browser session
+  const [showIntro, setShowIntro] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem('msemun_intro_played') !== 'true';
+    } catch {
+      return true;
+    }
+  });
   const [currentPage, setCurrentPage] = useState<PageView>('home');
   const [selectedCommitteeForApply, setSelectedCommitteeForApply] = useState<string>('unsc');
+
+  const handleIntroComplete = () => {
+    try {
+      sessionStorage.setItem('msemun_intro_played', 'true');
+    } catch (e) {
+      console.warn('sessionStorage error:', e);
+    }
+    setShowIntro(false);
+  };
 
   const handleNavigate = (page: PageView) => {
     setCurrentPage(page);
@@ -23,7 +39,7 @@ export const App: React.FC = () => {
     <div className="min-h-screen bg-[#060608] text-[#f8fafc] flex flex-col">
       {/* Cinematic Fullscreen Video Intro */}
       {showIntro && (
-        <VideoIntro onComplete={() => setShowIntro(false)} />
+        <VideoIntro onComplete={handleIntroComplete} />
       )}
 
       {/* Main Website Container with smooth fade-in after intro finishes */}
