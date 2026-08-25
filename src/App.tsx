@@ -24,6 +24,9 @@ export const App: React.FC = () => {
       console.warn('sessionStorage error:', e);
     }
     setShowIntro(false);
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 150);
   };
 
   const handleNavigate = (page: PageView) => {

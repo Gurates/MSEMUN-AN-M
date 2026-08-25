@@ -257,6 +257,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           }
         }
       });
+      // Refresh ScrollTrigger once DOM layout is settled
+      setTimeout(() => {
+        ScrollTrigger.refresh();
+      }, 200);
     }, section);
 
     return () => ctx.revert();
