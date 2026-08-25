@@ -72,7 +72,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
   const [activeRole, setActiveRole] = useState<ApplicationType>('hub');
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // ── Delegate Form State ──
   const [delegateForm, setDelegateForm] = useState({
@@ -161,29 +160,27 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     }));
   };
 
-  // ── Generic Submitter with Supabase Integration ──
+  // ── Generic Submitter with Supabase Error Validation (Identical to AlaçatıMUN) ──
   const handleGenericSubmit = async (
     e: React.FormEvent, 
     validator: () => boolean,
-    insertFn: () => Promise<void>
+    insertFn: () => PromiseLike<any>
   ) => {
     e.preventDefault();
-    setSubmitError(null);
 
     if (validator()) {
       setIsSubmitting(true);
       try {
-        await insertFn();
-        setIsSuccess(true);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } catch (err: any) {
-        console.error('Submission error:', err);
-        // If Supabase credentials are missing or table is still setting up, proceed gracefully
-        if (err?.message && !err.message.includes('placeholder')) {
-          setSubmitError(`Registration noted. (${err.message})`);
+        const { error } = await insertFn();
+        if (error) {
+          console.error('Supabase application error:', error);
+          throw error;
         }
         setIsSuccess(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (err: any) {
+        console.error('Error submitting application:', err?.message || err);
+        alert(`An error occurred while submitting your application: ${err?.message || 'Database error'}. Please try again or contact support.`);
       } finally {
         setIsSubmitting(false);
       }
@@ -293,9 +290,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
             <p className="text-sm text-slate-300 font-sans leading-relaxed mb-8 max-w-md">
               Thank you for applying to AlaçatıMUN 2026. We have received your application and will evaluate it carefully.
             </p>
-            {submitError && (
-              <p className="text-xs text-amber-400 font-mono mb-4">{submitError}</p>
-            )}
             <button
               onClick={() => {
                 setIsSuccess(false);
@@ -410,8 +404,8 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                 </div>
 
                 <form 
-                  onSubmit={(e) => handleGenericSubmit(e, validateDelegate, async () => {
-                    await supabase.from('registrations').insert([{
+                  onSubmit={(e) => handleGenericSubmit(e, validateDelegate, () => 
+                    supabase.from('registrations').insert([{
                       full_name: delegateForm.fullName,
                       school: delegateForm.school,
                       grade: delegateForm.grade,
@@ -424,8 +418,8 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                       motivation_letter: delegateForm.motivationLetter,
                       message: delegateForm.message,
                       references: delegateForm.references
-                    }]);
-                  })} 
+                    }])
+                  )} 
                   className="space-y-8"
                 >
                   {/* General Information */}
@@ -648,8 +642,8 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                 </div>
 
                 <form 
-                  onSubmit={(e) => handleGenericSubmit(e, validateDelegation, async () => {
-                    await supabase.from('delegations').insert([{
+                  onSubmit={(e) => handleGenericSubmit(e, validateDelegation, () =>
+                    supabase.from('delegations').insert([{
                       full_name: delegationForm.fullName,
                       school: delegationForm.school,
                       delegation_name: delegationForm.delegationName,
@@ -659,8 +653,8 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                       all_emails: delegationForm.allEmails,
                       all_phones: delegationForm.allPhones,
                       message: delegationForm.message
-                    }]);
-                  })} 
+                    }])
+                  )} 
                   className="space-y-8"
                 >
                   <div>
@@ -814,8 +808,8 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                 </div>
 
                 <form 
-                  onSubmit={(e) => handleGenericSubmit(e, validateChairboard, async () => {
-                    await supabase.from('chairboard_apps').insert([{
+                  onSubmit={(e) => handleGenericSubmit(e, validateChairboard, () =>
+                    supabase.from('chairboard_apps').insert([{
                       full_name: chairboardForm.fullName,
                       school: chairboardForm.school,
                       grade: chairboardForm.grade,
@@ -835,8 +829,8 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                       q_disagreement: chairboardForm.qDisagreement,
                       message: chairboardForm.message,
                       references_text: chairboardForm.references
-                    }]);
-                  })} 
+                    }])
+                  )} 
                   className="space-y-8"
                 >
                   {/* Personal Details */}
@@ -1153,8 +1147,8 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                 </div>
 
                 <form 
-                  onSubmit={(e) => handleGenericSubmit(e, validateAdmin, async () => {
-                    await supabase.from('admin_apps').insert([{
+                  onSubmit={(e) => handleGenericSubmit(e, validateAdmin, () =>
+                    supabase.from('admin_apps').insert([{
                       full_name: adminForm.fullName,
                       school: adminForm.school,
                       grade: adminForm.grade,
@@ -1163,8 +1157,8 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                       org_exp_list: adminForm.orgExpList,
                       references_text: adminForm.references,
                       message: adminForm.message
-                    }]);
-                  })} 
+                    }])
+                  )} 
                   className="space-y-8"
                 >
                   <div>
@@ -1303,8 +1297,8 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                 </div>
 
                 <form 
-                  onSubmit={(e) => handleGenericSubmit(e, validatePress, async () => {
-                    await supabase.from('press_apps').insert([{
+                  onSubmit={(e) => handleGenericSubmit(e, validatePress, () =>
+                    supabase.from('press_apps').insert([{
                       full_name: pressForm.fullName,
                       school: pressForm.school,
                       grade: pressForm.grade,
@@ -1314,8 +1308,8 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                       camera_model: pressForm.cameraModel,
                       references_text: pressForm.references,
                       message: pressForm.message
-                    }]);
-                  })} 
+                    }])
+                  )} 
                   className="space-y-8"
                 >
                   <div>
