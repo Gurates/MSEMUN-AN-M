@@ -16,7 +16,8 @@ import {
   Mail,
   Phone,
   Building,
-  GraduationCap
+  GraduationCap,
+  ArrowLeft
 } from 'lucide-react';
 import { PageView } from './Navbar';
 
@@ -202,12 +203,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
 
   const getBadgeStyle = (type: string) => {
     switch (type) {
-      case 'Delegate': return 'bg-[#00b4d8]/20 text-[#00b4d8] border-[#00b4d8]/30';
-      case 'Delegation': return 'bg-white/20 text-white border-white/30';
-      case 'Chairboard': return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
-      case 'Admin Staff': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
-      case 'Press Corps': return 'bg-rose-500/20 text-rose-400 border-rose-500/30';
-      default: return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
+      case 'Delegate': return 'bg-[#00b4d8]/20 text-[#00b4d8] border-[#00b4d8]/40';
+      case 'Delegation': return 'bg-purple-500/20 text-purple-300 border-purple-500/40';
+      case 'Chairboard': return 'bg-amber-500/20 text-amber-400 border-amber-500/40';
+      case 'Admin Staff': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
+      case 'Press Corps': return 'bg-rose-500/20 text-rose-400 border-rose-500/40';
+      default: return 'bg-slate-500/20 text-slate-300 border-slate-500/40';
     }
   };
 
@@ -267,24 +268,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     <div className="min-h-screen pt-24 sm:pt-28 pb-16 px-4 sm:px-6 md:px-8 bg-[#060608] cinematic-grid">
       <div className="max-w-7xl mx-auto space-y-6">
         
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
+        {/* Top Header Bar */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-white/10">
           <div>
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1.5">
               <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-amber-400/20 text-amber-300 border border-amber-400/30">
                 Secretariat Portal
               </span>
               <span className="text-xs text-slate-400 font-mono">MSEMUN '26</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white font-serif">Applications Management</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white font-serif tracking-tight">Applications Management</h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
             {onNavigate && (
               <button
                 onClick={() => onNavigate('home')}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-slate-300 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-slate-300 transition-colors cursor-pointer"
               >
+                <ArrowLeft size={14} />
                 <span>Return to Website</span>
               </button>
             )}
@@ -292,15 +294,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
             <button
               onClick={fetchAllData}
               disabled={loading}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-slate-300 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-slate-300 transition-colors cursor-pointer"
             >
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+              <RefreshCw size={14} className={loading ? 'animate-spin text-amber-400' : ''} />
               <span>Refresh</span>
             </button>
 
             <button
               onClick={handleLogout}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-xs text-red-400 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-xs text-red-400 transition-colors cursor-pointer"
             >
               <LogOut size={14} />
               <span>Logout</span>
@@ -324,17 +326,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                   setActiveTab(tab.id);
                   setSearchQuery('');
                 }}
-                className={`p-3.5 sm:p-4 rounded-xl border transition-all cursor-pointer ${
+                className={`p-3.5 sm:p-4 rounded-xl border transition-all cursor-pointer select-none ${
                   isActive 
-                    ? 'bg-[#131320] border-amber-400/50 shadow-lg shadow-amber-500/5' 
+                    ? 'bg-[#131320] border-amber-400/60 shadow-lg shadow-amber-500/10 scale-[1.02]' 
                     : 'bg-[#0c0c14]/80 border-white/10 hover:border-white/20 hover:bg-white/5'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <Icon size={18} className={isActive ? 'text-amber-400' : 'text-slate-400'} />
-                  <span className="text-xs font-mono text-slate-400 font-semibold">{count}</span>
+                  <span className={`text-sm font-mono font-bold ${isActive ? 'text-amber-300' : 'text-slate-300'}`}>
+                    {count}
+                  </span>
                 </div>
-                <div className="text-xs font-medium text-white truncate">{tab.label}</div>
+                <div className={`text-xs font-medium truncate ${isActive ? 'text-white font-semibold' : 'text-slate-400'}`}>
+                  {tab.label}
+                </div>
               </div>
             );
           })}
@@ -366,21 +372,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
         {/* Applications Table */}
         <div className="rounded-xl bg-[#0c0c14]/90 border border-white/10 overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-black/50 border-b border-white/10 text-slate-400 font-mono uppercase text-[11px]">
+            <table className="w-full text-left text-xs border-collapse min-w-[760px]">
+              <thead className="bg-black/60 border-b border-white/10 text-slate-400 font-mono uppercase text-[11px]">
                 <tr>
-                  <th className="px-4 py-3.5 font-semibold">Role / Type</th>
-                  <th className="px-4 py-3.5 font-semibold">Applicant Name</th>
-                  <th className="px-4 py-3.5 font-semibold">School</th>
-                  <th className="px-4 py-3.5 font-semibold">Contact Email</th>
-                  <th className="px-4 py-3.5 font-semibold">Phone</th>
-                  <th className="px-4 py-3.5 font-semibold text-right">Submission Date</th>
+                  <th className="px-4 py-3.5 font-semibold w-28">Role</th>
+                  <th className="px-4 py-3.5 font-semibold w-48">Applicant Name</th>
+                  <th className="px-4 py-3.5 font-semibold w-44">School</th>
+                  <th className="px-4 py-3.5 font-semibold w-48">Contact Email</th>
+                  <th className="px-4 py-3.5 font-semibold w-36">Phone</th>
+                  <th className="px-4 py-3.5 font-semibold text-right w-36">Submission Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 text-slate-300">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-slate-400 font-mono">
+                    <td colSpan={6} className="px-4 py-16 text-center text-slate-400 font-mono">
                       <div className="inline-flex items-center gap-2">
                         <RefreshCw size={16} className="animate-spin text-amber-400" />
                         <span>Loading applications from Supabase...</span>
@@ -389,7 +395,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                   </tr>
                 ) : filteredData.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-slate-400">
+                    <td colSpan={6} className="px-4 py-16 text-center text-slate-400">
                       {searchQuery ? 'No applications match your search query.' : 'No applications received in this category yet.'}
                     </td>
                   </tr>
@@ -401,22 +407,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                       className="hover:bg-white/5 transition-colors cursor-pointer group"
                     >
                       <td className="px-4 py-3">
-                        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold border ${getBadgeStyle(item.app_type)}`}>
+                        <span className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold border ${getBadgeStyle(item.app_type)}`}>
                           {item.app_type}
                         </span>
                       </td>
                       <td className="px-4 py-3 font-medium text-white group-hover:text-amber-300 transition-colors">
                         {item.delegation_name ? (
                           <div>
-                            <div>{item.delegation_name}</div>
+                            <div className="font-semibold">{item.delegation_name}</div>
                             <div className="text-[11px] text-slate-400 font-normal">{item.full_name} (Head Delegate)</div>
                           </div>
                         ) : (
                           item.full_name
                         )}
                       </td>
-                      <td className="px-4 py-3 text-slate-300">{item.school}</td>
-                      <td className="px-4 py-3 text-slate-300 font-mono text-[11px]">{item.email}</td>
+                      <td className="px-4 py-3 text-slate-300 truncate max-w-[180px]">{item.school}</td>
+                      <td className="px-4 py-3 text-slate-300 font-mono text-[11px] truncate max-w-[200px]">{item.email}</td>
                       <td className="px-4 py-3 text-slate-300 font-mono text-[11px]">{item.phone || '—'}</td>
                       <td className="px-4 py-3 text-right font-mono text-slate-400 text-[11px]">
                         {formatDate(item.created_at)}
@@ -431,75 +437,76 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
 
       </div>
 
-      {/* ═══ APPLICATION DETAIL MODAL ═══ */}
+      {/* ═══ APPLICATION DETAIL MODAL (FIXED HEADER & RESPONSIVE TEXT BREAKING) ═══ */}
       {selectedItem && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md overflow-hidden"
           onClick={() => setSelectedItem(null)}
         >
           <div 
-            className="relative w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl bg-[#0c0c14] border border-white/15 p-6 sm:p-8 shadow-2xl"
+            className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl bg-[#0c0c14] border border-white/20 shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-6">
+            {/* Sticky Fixed Modal Header */}
+            <div className="flex items-start justify-between p-5 sm:p-6 border-b border-white/10 bg-[#0f0f1c] shrink-0">
               <div>
                 <span className={`inline-block px-2.5 py-0.5 rounded text-xs font-semibold border mb-2 ${getBadgeStyle(selectedItem.app_type)}`}>
                   {selectedItem.app_type}
                 </span>
-                <h2 className="text-xl sm:text-2xl font-bold text-white font-serif">
+                <h2 className="text-xl sm:text-2xl font-bold text-white font-serif break-words">
                   {selectedItem.delegation_name || selectedItem.full_name}
                 </h2>
-                <p className="text-xs text-slate-400 font-mono mt-0.5">
+                <p className="text-xs text-slate-400 font-mono mt-1">
                   Submitted on {formatDate(selectedItem.created_at)}
                 </p>
               </div>
 
               <button
                 onClick={() => setSelectedItem(null)}
-                className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer shrink-0 ml-4"
+                title="Close"
               >
                 <X size={20} />
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="space-y-6 text-xs text-slate-300">
+            {/* Scrollable Modal Body with Guaranteed Text Wrapping */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-5 text-xs text-slate-300">
               
               {/* Quick Info Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-xl bg-black/40 border border-white/10">
-                <div className="flex items-center gap-2.5">
-                  <Mail size={16} className="text-slate-400 shrink-0" />
-                  <div>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Mail size={16} className="text-amber-400 shrink-0" />
+                  <div className="min-w-0">
                     <div className="text-[10px] uppercase font-mono text-slate-500">Email</div>
-                    <a href={`mailto:${selectedItem.email}`} className="text-amber-400 hover:underline">
+                    <a href={`mailto:${selectedItem.email}`} className="text-slate-200 hover:text-amber-400 hover:underline break-all block">
                       {selectedItem.email}
                     </a>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2.5">
-                  <Phone size={16} className="text-slate-400 shrink-0" />
-                  <div>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Phone size={16} className="text-amber-400 shrink-0" />
+                  <div className="min-w-0">
                     <div className="text-[10px] uppercase font-mono text-slate-500">Phone</div>
-                    <a href={`tel:${selectedItem.phone}`} className="text-amber-400 hover:underline">
+                    <a href={`tel:${selectedItem.phone}`} className="text-slate-200 hover:text-amber-400 hover:underline block">
                       {selectedItem.phone || '—'}
                     </a>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2.5">
-                  <Building size={16} className="text-slate-400 shrink-0" />
-                  <div>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Building size={16} className="text-amber-400 shrink-0" />
+                  <div className="min-w-0">
                     <div className="text-[10px] uppercase font-mono text-slate-500">School / Institution</div>
-                    <div className="text-white font-medium">{selectedItem.school}</div>
+                    <div className="text-white font-medium break-words">{selectedItem.school}</div>
                   </div>
                 </div>
 
                 {selectedItem.grade && (
-                  <div className="flex items-center gap-2.5">
-                    <GraduationCap size={16} className="text-slate-400 shrink-0" />
-                    <div>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <GraduationCap size={16} className="text-amber-400 shrink-0" />
+                    <div className="min-w-0">
                       <div className="text-[10px] uppercase font-mono text-slate-500">Grade</div>
                       <div className="text-white font-medium">{selectedItem.grade}</div>
                     </div>
@@ -509,26 +516,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
 
               {/* Committee Preferences */}
               {(selectedItem.committee_preference_1 || selectedItem.pref1) && (
-                <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2">
+                <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2.5">
                   <h3 className="text-xs uppercase font-mono font-bold text-amber-400">Committee Preferences</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                     <div className="p-2.5 rounded-lg bg-white/5 border border-white/10">
-                      <span className="text-[10px] text-slate-400 font-mono block">1st Choice</span>
-                      <span className="font-semibold text-white uppercase">{selectedItem.committee_preference_1 || selectedItem.pref1}</span>
+                      <span className="text-[10px] text-slate-400 font-mono block mb-0.5">1st Choice</span>
+                      <span className="font-semibold text-white uppercase break-words">{selectedItem.committee_preference_1 || selectedItem.pref1}</span>
                     </div>
                     <div className="p-2.5 rounded-lg bg-white/5 border border-white/10">
-                      <span className="text-[10px] text-slate-400 font-mono block">2nd Choice</span>
-                      <span className="font-semibold text-white uppercase">{selectedItem.committee_preference_2 || selectedItem.pref2 || '—'}</span>
+                      <span className="text-[10px] text-slate-400 font-mono block mb-0.5">2nd Choice</span>
+                      <span className="font-semibold text-white uppercase break-words">{selectedItem.committee_preference_2 || selectedItem.pref2 || '—'}</span>
                     </div>
                     <div className="p-2.5 rounded-lg bg-white/5 border border-white/10">
-                      <span className="text-[10px] text-slate-400 font-mono block">3rd Choice</span>
-                      <span className="font-semibold text-white uppercase">{selectedItem.committee_preference_3 || selectedItem.pref3 || '—'}</span>
+                      <span className="text-[10px] text-slate-400 font-mono block mb-0.5">3rd Choice</span>
+                      <span className="font-semibold text-white uppercase break-words">{selectedItem.committee_preference_3 || selectedItem.pref3 || '—'}</span>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Detailed Dynamic Answers */}
+              {/* Detailed Dynamic Answers with Overflow Fix */}
               {Object.entries(selectedItem).map(([key, value]) => {
                 if ([
                   'id', 'created_at', 'full_name', 'email', 'phone', 'school', 'grade', 
@@ -562,9 +569,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                 const title = customTitles[key] || key.replace(/_/g, ' ').toUpperCase();
 
                 return (
-                  <div key={key} className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-1.5">
+                  <div key={key} className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-1.5 overflow-hidden">
                     <h4 className="text-[11px] font-mono uppercase font-bold text-amber-400">{title}</h4>
-                    <p className="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">
+                    <p className="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed break-words break-all [overflow-wrap:anywhere] max-w-full">
                       {String(value)}
                     </p>
                   </div>
@@ -572,6 +579,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
               })}
 
             </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-white/10 bg-[#0f0f1c] flex items-center justify-end">
+              <button
+                onClick={() => setSelectedItem(null)}
+                className="px-5 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-xs text-white transition-colors cursor-pointer"
+              >
+                Close Window
+              </button>
+            </div>
+
           </div>
         </div>
       )}
