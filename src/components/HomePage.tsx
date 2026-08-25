@@ -6,6 +6,9 @@ import { PageView } from './Navbar';
 
 gsap.registerPlugin(ScrollTrigger);
 
+// Prevent mobile URL address bar collapse/expand from causing scroll jumps or canvas resize
+ScrollTrigger.config({ ignoreMobileResize: true });
+
 const TOTAL_FRAMES = 240;
 
 const getFramePath = (index: number) => {
@@ -29,6 +32,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const pendingFrameRef = useRef<number>(0);
   const isRenderingRef = useRef<boolean>(false);
   const rafIdRef = useRef<number>(0);
+  const lastWidthRef = useRef<number>(typeof window !== 'undefined' ? window.innerWidth : 1200);
 
   const [timeLeft, setTimeLeft] = useState({
     days: 30,
@@ -37,7 +41,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     seconds: 0
   });
 
-  // ── Countdown Timer (isolated, updates only once per second) ──
+  // ── Countdown Timer (isolated, updates once per second) ──
   useEffect(() => {
     const targetDate = new Date();
     targetDate.setDate(targetDate.getDate() + 30);
@@ -183,12 +187,16 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     };
   }, [drawFrame, sizeCanvas]);
 
-  // ── Resize canvas on window resize ──
+  // ── Resize canvas on window resize (Ignores mobile address bar height changes) ──
   useEffect(() => {
     let resizeTimer: ReturnType<typeof setTimeout>;
     const handleResize = () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(sizeCanvas, 100);
+      // Only recalculate if screen width changed (e.g. orientation flip or window resize)
+      if (Math.abs(window.innerWidth - lastWidthRef.current) > 25) {
+        lastWidthRef.current = window.innerWidth;
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(sizeCanvas, 100);
+      }
     };
 
     window.addEventListener('resize', handleResize);
@@ -199,7 +207,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     };
   }, [sizeCanvas]);
 
-  // ── GSAP ScrollTrigger with ZERO React Re-render Overhead ──
+  // ── GSAP ScrollTrigger with Zero-Jank Mobile Lock ──
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
@@ -214,6 +222,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         start: 'top top',
         end: () => (window.innerWidth < 768 ? '+=2200' : '+=3600'),
         pin: true,
+        anticipatePin: 1,
+        fastScrollEnd: true,
+        preventOverlaps: true,
         scrub: 0.35,
         onUpdate: (self) => {
           const progress = self.progress;
@@ -260,6 +271,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         className="relative w-full overflow-hidden"
         style={{
           height: '100vh',
+          minHeight: '-webkit-fill-available',
           touchAction: 'pan-y',
           transform: 'translate3d(0, 0, 0)',
           backfaceVisibility: 'hidden'
