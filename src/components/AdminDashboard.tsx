@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
-import { 
-  Search, 
-  Download, 
-  Users, 
-  FileText, 
-  CheckCircle, 
-  Briefcase, 
-  Award, 
-  X, 
-  LayoutGrid, 
-  Lock, 
-  RefreshCw, 
+import {
+  Search,
+  Download,
+  Users,
+  FileText,
+  CheckCircle,
+  Briefcase,
+  Award,
+  X,
+  LayoutGrid,
+  Lock,
+  RefreshCw,
   LogOut,
   Mail,
   Phone,
@@ -63,11 +63,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     e.preventDefault();
     const correctPassword = import.meta.env.VITE_ADMIN_PASSWORD;
 
-    if (!correctPassword) {
-      setAuthError('Admin password is not set. Please add VITE_ADMIN_PASSWORD to your .env file.');
-      return;
-    }
-
     if (passwordInput === correctPassword) {
       setIsAuthenticated(true);
       try {
@@ -95,10 +90,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     setLoading(true);
     try {
       const tabs: Exclude<TabType, 'all'>[] = [
-        'registrations', 
-        'delegations', 
-        'chairboard_apps', 
-        'admin_apps', 
+        'registrations',
+        'delegations',
+        'chairboard_apps',
+        'admin_apps',
         'press_apps'
       ];
       const results: Record<string, any[]> = {};
@@ -272,7 +267,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   return (
     <div className="min-h-screen pt-24 sm:pt-28 pb-16 px-4 sm:px-6 md:px-8 bg-[#060608] cinematic-grid">
       <div className="max-w-7xl mx-auto space-y-6">
-        
+
         {/* Top Header Bar */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-white/10">
           <div>
@@ -331,11 +326,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                   setActiveTab(tab.id);
                   setSearchQuery('');
                 }}
-                className={`p-3.5 sm:p-4 rounded-xl border transition-all cursor-pointer select-none ${
-                  isActive 
-                    ? 'bg-[#131320] border-amber-400/60 shadow-lg shadow-amber-500/10 scale-[1.02]' 
+                className={`p-3.5 sm:p-4 rounded-xl border transition-all cursor-pointer select-none ${isActive
+                    ? 'bg-[#131320] border-amber-400/60 shadow-lg shadow-amber-500/10 scale-[1.02]'
                     : 'bg-[#0c0c14]/80 border-white/10 hover:border-white/20 hover:bg-white/5'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <Icon size={18} className={isActive ? 'text-amber-400' : 'text-slate-400'} />
@@ -444,11 +438,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
 
       {/* ═══ APPLICATION DETAIL MODAL (FIXED HEADER & RESPONSIVE TEXT BREAKING) ═══ */}
       {selectedItem && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md overflow-hidden"
           onClick={() => setSelectedItem(null)}
         >
-          <div 
+          <div
             className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl bg-[#0c0c14] border border-white/20 shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
@@ -477,7 +471,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
 
             {/* Scrollable Modal Body with Guaranteed Text Wrapping */}
             <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-5 text-xs text-slate-300">
-              
+
               {/* Quick Info Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-xl bg-black/40 border border-white/10">
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -543,8 +537,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
               {/* Detailed Dynamic Answers with Overflow Fix */}
               {Object.entries(selectedItem).map(([key, value]) => {
                 if ([
-                  'id', 'created_at', 'full_name', 'email', 'phone', 'school', 'grade', 
-                  'app_type', 'committee_preference_1', 'committee_preference_2', 
+                  'id', 'created_at', 'full_name', 'email', 'phone', 'school', 'grade',
+                  'app_type', 'committee_preference_1', 'committee_preference_2',
                   'committee_preference_3', 'pref1', 'pref2', 'pref3'
                 ].includes(key)) return null;
 
