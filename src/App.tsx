@@ -84,7 +84,7 @@ export const App: React.FC = () => {
       {/* Main Website Container */}
       <div 
         className={`flex flex-col flex-grow transition-opacity duration-1000 ${
-          showIntro ? 'opacity-0' : 'opacity-100'
+          showIntro ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
         }`}
         style={{
           transition: 'opacity 1s cubic-bezier(0.16, 1, 0.3, 1)'
