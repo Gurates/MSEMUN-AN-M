@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { COMMITTEES_DATA } from '../data/conferenceData';
-import { Flame, ArrowRight, Shield, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Flame, ArrowRight, Shield, CheckCircle2, ChevronDown, ChevronUp, Maximize2, X } from 'lucide-react';
 import { Committee } from '../types';
 import { PageView } from './Navbar';
 
@@ -14,6 +14,7 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
   onSelectCommitteeForApply
 }) => {
   const [activeIndex, setActiveIndex] = useState<number>(0);
+  const [selectedPosterCommittee, setSelectedPosterCommittee] = useState<Committee | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isThrottled = useRef<boolean>(false);
   const touchStartY = useRef<number>(0);
@@ -106,7 +107,7 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
       ref={containerRef}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className="relative min-h-screen pt-28 sm:pt-36 md:pt-40 pb-8 sm:pb-14 overflow-hidden bg-[#060608] flex flex-col justify-between select-none"
+      className="relative min-h-screen pt-24 sm:pt-28 md:pt-32 pb-4 sm:pb-6 overflow-hidden bg-[#060608] flex flex-col justify-between select-none"
       style={{
         perspective: '1400px'
       }}
@@ -124,7 +125,7 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
       <div className="section-container relative z-10 w-full flex-grow flex flex-col justify-between">
         
         {/* Top Header & Chamber Selector (Comfortably Spaced Below Navbar) */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6 mb-4 sm:mb-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-5 mb-2 sm:mb-4">
           <div>
             <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
               <span className="font-mono text-[10px] sm:text-xs font-semibold text-amber-500 tracking-widest uppercase">
@@ -166,7 +167,7 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
         </div>
 
         {/* 3D Stack Stage */}
-        <div className="relative w-full h-[510px] sm:h-[580px] my-auto flex items-center justify-center">
+        <div className="relative w-full h-[550px] sm:h-[620px] md:h-[650px] my-auto flex items-center justify-center">
           
           {/* Card Stack */}
           {COMMITTEES_DATA.map((committee, index) => {
@@ -194,7 +195,7 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
               filter = 'blur(6px)';
             } else if (isFuture) {
               const depthFactor = Math.min(diff, 4);
-              transform = `translate(-50%, -50%) translateY(${depthFactor * 22}px) scale(${1 - depthFactor * 0.045}) translateZ(${-depthFactor * 55}px) rotateX(${-depthFactor * 1.5}deg)`;
+              transform = `translate(-50%, -50%) translateY(${depthFactor * 20}px) scale(${1 - depthFactor * 0.045}) translateZ(${-depthFactor * 55}px) rotateX(${-depthFactor * 1.5}deg)`;
               opacity = Math.max(0, 1 - depthFactor * 0.26);
               zIndex = 20 - depthFactor;
               filter = diff > 2 ? 'blur(2px)' : 'blur(0px)';
@@ -204,10 +205,11 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
               <div
                 key={committee.id}
                 onClick={() => isFuture && setActiveIndex(index)}
-                className="absolute top-1/2 left-1/2 rounded-2xl p-5 sm:p-7 flex flex-col justify-between transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] border border-white/12 shadow-[0_30px_90px_-20px_rgba(0,0,0,0.85)] cursor-pointer overflow-hidden"
+                className="absolute top-1/2 left-1/2 rounded-2xl p-4 sm:p-5 md:p-6 flex flex-col justify-between transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] border border-white/12 shadow-[0_30px_90px_-20px_rgba(0,0,0,0.85)] cursor-pointer overflow-hidden"
                 style={{
-                  width: 'clamp(290px, 92vw, 760px)',
-                  height: 'min(66vh, 540px)',
+                  width: 'clamp(300px, 92vw, 760px)',
+                  height: 'min(76vh, 620px)',
+                  minHeight: '490px',
                   backgroundImage: committee.gradient || 'linear-gradient(155deg, #1d1d28 0%, #0d0d14 100%)',
                   transform,
                   opacity,
@@ -220,7 +222,7 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
                 }}
               >
                 {/* Card Top Row: Number & Level Badge */}
-                <div className="flex items-center justify-between text-xs tracking-widest uppercase pb-2.5 sm:pb-3 border-b border-white/8">
+                <div className="flex items-center justify-between text-xs tracking-widest uppercase pb-2 sm:pb-2.5 border-b border-white/8 shrink-0">
                   <div className="flex items-center gap-2 sm:gap-3">
                     <span className="font-serif italic text-xl sm:text-2xl font-bold text-amber-400">
                       {String(index + 1).padStart(2, '0')}
@@ -236,28 +238,49 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
                 </div>
 
                 {/* Card Center: High-Definition Chamber Artwork */}
-                <div className="relative my-2 sm:my-3 w-full h-44 sm:h-52 md:h-56 rounded-xl overflow-hidden border border-white/10 bg-black/50 group shrink-0">
+                <div 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPosterCommittee(committee);
+                  }}
+                  className="relative my-2 w-full flex-1 min-h-[140px] max-h-[250px] rounded-xl overflow-hidden border border-white/10 bg-[#06060c] group flex items-center justify-center cursor-pointer shrink"
+                  title="Click to view full official poster"
+                >
+                  {/* Ambient Blurred Aura from the actual artwork */}
+                  <img
+                    src={committee.image}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 w-full h-full object-cover filter blur-md scale-110 opacity-35 pointer-events-none"
+                  />
+                  {/* Main Artwork - perfectly contained without clipping titles or logo */}
                   <img
                     src={committee.image}
                     alt={committee.name}
-                    className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                    className="relative z-10 max-h-full max-w-full object-contain object-center transition-transform duration-700 group-hover:scale-105 drop-shadow-[0_6px_20px_rgba(0,0,0,0.8)]"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/10 pointer-events-none z-10" />
                   
                   {/* Floating Flame Tag inside artwork */}
-                  <div className="absolute bottom-2.5 left-2.5 sm:bottom-3 sm:left-3 px-2.5 sm:px-3 py-1 rounded-md bg-black/75 backdrop-blur-md border border-white/15 text-[10px] sm:text-[11px] font-mono text-amber-300 flex items-center gap-1.5 shadow-lg">
+                  <div className="absolute bottom-2 left-2 sm:bottom-2.5 sm:left-2.5 px-2.5 sm:px-3 py-1 rounded-md bg-black/80 backdrop-blur-md border border-white/15 text-[10px] sm:text-[11px] font-mono text-amber-300 flex items-center gap-1.5 shadow-lg z-20">
                     <Flame className="w-3.5 h-3.5 text-orange-400" />
                     <span>{committee.flameFocus}</span>
+                  </div>
+
+                  {/* Subtle Zoom / Expand Hint on hover */}
+                  <div className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 px-2 py-0.5 sm:py-1 rounded-md bg-black/70 backdrop-blur-md border border-white/10 text-[9px] sm:text-[10px] font-mono text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex items-center gap-1">
+                    <Maximize2 className="w-3 h-3 text-amber-400" />
+                    <span>POSTER</span>
                   </div>
                 </div>
 
                 {/* Card Bottom Row: Title, Agenda & Action Button */}
-                <div className="pt-1">
-                  <div className="mb-2">
+                <div className={`pt-1 sm:pt-2 shrink-0 transition-opacity duration-300 ${!isActive ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                  <div className="mb-1.5 sm:mb-2">
                     <h2 className="font-serif text-base sm:text-xl md:text-2xl font-bold text-white leading-tight">
                       {committee.shortTitle || committee.name}
                     </h2>
-                    <p className="text-[11px] sm:text-xs text-slate-300 font-sans mt-0.5 sm:mt-1 line-clamp-2 leading-relaxed">
+                    <p className="text-xs sm:text-[13px] text-slate-300 font-sans mt-0.5 sm:mt-1 line-clamp-2 leading-relaxed">
                       "{committee.agenda}"
                     </p>
                   </div>
@@ -276,11 +299,17 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
                         <span>{committee.acas}</span>
                       </span>
                     )}
+                    {committee.hoc && (
+                      <span className="flex items-center gap-1">
+                        <span className="text-orange-400 font-semibold">HOC:</span>
+                        <span>{committee.hoc}</span>
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between pt-2 sm:pt-2.5 border-t border-white/8">
-                    <span className="text-[10px] sm:text-[11px] font-mono text-slate-400">
-                      Cap: <strong className="text-amber-400">{committee.seats} Seats</strong>
+                    <span className="text-[11px] sm:text-xs font-mono text-slate-400">
+                      Cap: <strong className="text-amber-400 font-semibold">{committee.seats} Seats</strong>
                     </span>
 
                     <button
@@ -314,6 +343,29 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
                 <span className="text-[10px] font-mono text-slate-500">
                   CHAMBER {String(activeIndex + 1).padStart(2, '0')}/{String(COMMITTEES_DATA.length).padStart(2, '0')}
                 </span>
+              </div>
+
+              {/* Dossier Poster Preview */}
+              <div 
+                onClick={() => setSelectedPosterCommittee(activeCommittee)}
+                className="relative w-full h-36 rounded-xl overflow-hidden border border-white/10 bg-black/60 mb-3 group cursor-pointer flex items-center justify-center"
+                title="Click to view full official poster"
+              >
+                <img
+                  src={activeCommittee.image}
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 w-full h-full object-cover filter blur-md scale-110 opacity-40 pointer-events-none"
+                />
+                <img
+                  src={activeCommittee.image}
+                  alt={activeCommittee.name}
+                  className="relative z-10 max-h-full max-w-full object-contain object-center drop-shadow-md group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/80 text-[10px] font-mono text-amber-300 border border-white/10 z-20 flex items-center gap-1">
+                  <Maximize2 className="w-3 h-3" />
+                  <span>VIEW POSTER</span>
+                </div>
               </div>
 
               <h3 className="font-serif text-base font-bold text-white mb-2 leading-snug">
@@ -439,6 +491,69 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
         </div>
 
       </div>
+
+      {/* ── Official Poster Lightbox Modal ── */}
+      {selectedPosterCommittee && (
+        <div 
+          onClick={() => setSelectedPosterCommittee(null)}
+          className="fixed inset-0 z-[1000] bg-black/90 backdrop-blur-xl flex items-center justify-center p-3 sm:p-6"
+          style={{ position: 'fixed', inset: 0, zIndex: 100000 }}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-4xl w-full max-h-[94vh] flex flex-col items-center justify-between rounded-2xl border border-white/15 bg-[#0a0a12]/95 p-3 sm:p-5 shadow-[0_25px_80px_rgba(0,0,0,0.95)] overflow-hidden"
+          >
+            {/* Modal Header */}
+            <div className="w-full flex items-center justify-between pb-2.5 mb-2 border-b border-white/10">
+              <div className="flex items-center gap-2 sm:gap-3 truncate pr-2">
+                <span className="font-mono text-[11px] sm:text-xs font-bold text-amber-400 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 shrink-0">
+                  {selectedPosterCommittee.acronym}
+                </span>
+                <h3 className="font-serif text-xs sm:text-base font-bold text-white truncate">
+                  {selectedPosterCommittee.name}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedPosterCommittee(null)}
+                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Poster Image */}
+            <div className="relative w-full flex-grow flex items-center justify-center overflow-hidden rounded-xl bg-black/60 p-1 min-h-[50vh] max-h-[74vh]">
+              <img
+                src={selectedPosterCommittee.image}
+                alt={selectedPosterCommittee.name}
+                className="max-h-[70vh] max-w-full object-contain rounded-lg shadow-2xl"
+              />
+            </div>
+
+            {/* Modal Footer with Apply CTA */}
+            <div className="w-full flex items-center justify-between pt-2.5 mt-2 border-t border-white/10">
+              <span className="text-[10px] sm:text-xs font-mono text-slate-400">
+                Official MSEMUN XXVI Promotional Artwork
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const comm = selectedPosterCommittee;
+                  setSelectedPosterCommittee(null);
+                  handleApplyClick(comm);
+                }}
+                className="btn-primary text-[11px] sm:text-xs !py-2 !px-4 sm:!px-6 !rounded-lg"
+              >
+                <span>APPLY FOR {selectedPosterCommittee.acronym}</span>
+                <ArrowRight className="w-3.5 h-3.5 ml-1" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
