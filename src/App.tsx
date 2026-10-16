@@ -36,7 +36,7 @@ export const App: React.FC = () => {
   });
 
   const [currentPage, setCurrentPage] = useState<PageView>(initialPage);
-  const [selectedCommitteeForApply, setSelectedCommitteeForApply] = useState<string>('unsc');
+  const [selectedCommitteeForApply, setSelectedCommitteeForApply] = useState<string>('unwomen');
 
   // Handle URL history and browser back/forward buttons
   useEffect(() => {

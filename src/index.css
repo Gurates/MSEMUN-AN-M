@@ -517,6 +517,14 @@ input, select, textarea {
 .h-\[1px\] { height: 1px; }
 .h-\[2px\] { height: 2px; }
 
+/* Object Fit & Position */
+.object-cover { object-fit: cover !important; }
+.object-contain { object-fit: contain !important; }
+.object-fill { object-fit: fill !important; }
+.object-center { object-position: center !important; }
+.object-top { object-position: top !important; }
+.object-bottom { object-position: bottom !important; }
+
 .min-h-screen { min-height: 100vh; }
 .min-h-\[90vh\] { min-height: 90vh; }
 .max-w-xs { max-width: 20rem; }

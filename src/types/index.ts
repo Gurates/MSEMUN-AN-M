@@ -17,8 +17,14 @@ export interface Committee {
   agenda: string;
   description: string;
   level: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert' | 'Specialized Crisis';
-  seats: number;
+  seats: number | string;
   president: string;
+  usg?: string | string[];
+  acas?: string;
+  ctm?: string;
+  rapporteur?: string;
+  hoc?: string;
+  subCabinets?: string[];
   accentColor: string;
   flameFocus: string;
   image?: string;

@@ -159,7 +159,7 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
                   cursor: 'pointer'
                 }}
               >
-                0{i + 1} {c.acronym}
+                {String(i + 1).padStart(2, '0')} {c.acronym}
               </button>
             ))}
           </div>
@@ -223,7 +223,7 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
                 <div className="flex items-center justify-between text-xs tracking-widest uppercase pb-2.5 sm:pb-3 border-b border-white/8">
                   <div className="flex items-center gap-2 sm:gap-3">
                     <span className="font-serif italic text-xl sm:text-2xl font-bold text-amber-400">
-                      0{index + 1}
+                      {String(index + 1).padStart(2, '0')}
                     </span>
                     <span className="font-sans font-bold text-sm sm:text-base tracking-wider text-white">
                       {committee.acronym}
@@ -235,7 +235,7 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
                   </span>
                 </div>
 
-                {/* Card Center: High-Definition Chamber Artwork (Fills frame cleanly with no empty gaps) */}
+                {/* Card Center: High-Definition Chamber Artwork */}
                 <div className="relative my-2 sm:my-3 w-full h-44 sm:h-52 md:h-56 rounded-xl overflow-hidden border border-white/10 bg-black/50 group shrink-0">
                   <img
                     src={committee.image}
@@ -262,7 +262,23 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-white/8">
+                  {/* Staff Preview Line */}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] sm:text-[11px] font-mono text-slate-300 mb-2">
+                    {committee.usg && (
+                      <span className="flex items-center gap-1">
+                        <span className="text-amber-400 font-semibold">USG:</span>
+                        <span>{Array.isArray(committee.usg) ? committee.usg.join(', ') : committee.usg}</span>
+                      </span>
+                    )}
+                    {committee.acas && (
+                      <span className="flex items-center gap-1">
+                        <span className="text-sky-400 font-semibold">Acas:</span>
+                        <span>{committee.acas}</span>
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 sm:pt-2.5 border-t border-white/8">
                     <span className="text-[10px] sm:text-[11px] font-mono text-slate-400">
                       Cap: <strong className="text-amber-400">{committee.seats} Seats</strong>
                     </span>
@@ -286,9 +302,9 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
           })}
 
           {/* Right Floating Live Dossier Card (Desktop Only) */}
-          <div className="hidden xl:flex flex-col justify-between absolute right-4 top-1/2 -translate-y-1/2 w-[310px] p-6 rounded-2xl bg-[#0f0f1a]/95 border border-white/12 backdrop-blur-xl shadow-2xl z-30">
+          <div className="hidden xl:flex flex-col justify-between absolute right-4 top-1/2 -translate-y-1/2 w-[320px] p-6 rounded-2xl bg-[#0f0f1a]/95 border border-white/12 backdrop-blur-xl shadow-2xl z-30 max-h-[90%] overflow-y-auto no-scrollbar">
             <div>
-              <div className="flex items-center justify-between pb-3 mb-4 border-b border-white/8">
+              <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/8">
                 <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4 text-amber-400" />
                   <span className="font-mono text-xs text-amber-400 tracking-wider font-bold">
@@ -296,31 +312,71 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
                   </span>
                 </div>
                 <span className="text-[10px] font-mono text-slate-500">
-                  CHAMBER 0{activeIndex + 1}/06
+                  CHAMBER {String(activeIndex + 1).padStart(2, '0')}/{String(COMMITTEES_DATA.length).padStart(2, '0')}
                 </span>
               </div>
 
-              <h3 className="font-serif text-lg font-bold text-white mb-2 leading-snug">
+              <h3 className="font-serif text-base font-bold text-white mb-2 leading-snug">
                 {activeCommittee.name}
               </h3>
 
-              <div className="p-3 rounded-lg bg-black/40 border border-white/6 mb-4 text-xs font-sans text-slate-300 leading-relaxed">
+              <div className="p-2.5 rounded-lg bg-black/40 border border-white/6 mb-3 text-[11px] font-sans text-slate-300 leading-relaxed">
                 {activeCommittee.description}
               </div>
 
-              <div className="space-y-2 text-xs font-mono">
+              <div className="space-y-1.5 text-xs font-mono">
+                {activeCommittee.usg && (
+                  <div className="flex items-center justify-between p-2 rounded bg-white/3">
+                    <span className="text-slate-400">USG / Müsteşar:</span>
+                    <span className="text-white font-semibold text-right">
+                      {Array.isArray(activeCommittee.usg) ? activeCommittee.usg.join(', ') : activeCommittee.usg}
+                    </span>
+                  </div>
+                )}
+                {activeCommittee.acas && (
+                  <div className="flex items-center justify-between p-2 rounded bg-white/3">
+                    <span className="text-slate-400">Acas / Asistan:</span>
+                    <span className="text-white font-semibold text-right">{activeCommittee.acas}</span>
+                  </div>
+                )}
+                {activeCommittee.ctm && (
+                  <div className="flex items-center justify-between p-2 rounded bg-white/3">
+                    <span className="text-slate-400">Ctm / Kriz:</span>
+                    <span className="text-amber-400 font-semibold text-right">{activeCommittee.ctm}</span>
+                  </div>
+                )}
+                {activeCommittee.rapporteur && (
+                  <div className="flex items-center justify-between p-2 rounded bg-white/3">
+                    <span className="text-slate-400">Raportör:</span>
+                    <span className="text-white font-semibold text-right">{activeCommittee.rapporteur}</span>
+                  </div>
+                )}
+                {activeCommittee.hoc && (
+                  <div className="flex items-center justify-between p-2 rounded bg-white/3">
+                    <span className="text-slate-400">Head of Crisis:</span>
+                    <span className="text-orange-400 font-semibold text-right">{activeCommittee.hoc}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between p-2 rounded bg-white/3">
-                  <span className="text-slate-400">Bureau:</span>
-                  <span className="text-white font-semibold">{activeCommittee.president}</span>
+                  <span className="text-slate-400">Quorum:</span>
+                  <span className="text-amber-400 font-semibold">{activeCommittee.seats} Seats</span>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded bg-white/3">
-                  <span className="text-slate-400">Seat Quorum:</span>
-                  <span className="text-amber-400 font-semibold">{activeCommittee.seats} Selected Delegates</span>
-                </div>
+                {activeCommittee.subCabinets && activeCommittee.subCabinets.length > 0 && (
+                  <div className="p-2 rounded bg-white/3">
+                    <span className="text-slate-400 block mb-1 text-[11px]">Odalar / Dağılım:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {activeCommittee.subCabinets.map((sub, sIdx) => (
+                        <span key={sIdx} className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 text-[10px]">
+                          {sub}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="pt-4 mt-4 border-t border-white/8">
+            <div className="pt-3 mt-3 border-t border-white/8">
               <div className="flex items-center gap-2 text-[11px] font-mono text-emerald-400">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>Background Guides Released</span>
@@ -375,7 +431,7 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
         {/* Bottom Status Bar */}
         <div className="flex items-center justify-between text-[10px] sm:text-xs font-mono text-slate-400 pt-2 border-t border-white/8">
           <span>
-            CHAMBER: <strong className="text-amber-400">0{activeIndex + 1} // {activeCommittee.acronym}</strong>
+            CHAMBER: <strong className="text-amber-400">{String(activeIndex + 1).padStart(2, '0')} // {activeCommittee.acronym}</strong>
           </span>
           <span className="hidden sm:inline-block">
             USE MOUSE WHEEL, SWIPE, OR ARROWS TO PASS CARDS
