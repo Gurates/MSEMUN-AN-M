@@ -5,7 +5,6 @@ import { ArrowUpRight, Flame } from 'lucide-react';
 export const Speakers: React.FC = () => {
   return (
     <section id="speakers" className="relative py-28 overflow-hidden" data-scroll-section="speakers">
-      {/* Background ambient lighting */}
       <div 
         className="absolute bottom-0 left-1/4 w-[600px] h-[600px] rounded-full pointer-events-none"
         style={{
@@ -16,14 +15,12 @@ export const Speakers: React.FC = () => {
 
       <div className="section-container relative z-10">
         
-        {/* Section Eyebrow */}
         <div className="flex items-center gap-3 mb-3" data-animate="speakers-label">
           <span className="font-mono text-xs font-semibold text-amber-500 tracking-widest">03 // KEYNOTES</span>
           <span className="w-12 h-[1px] bg-amber-500/30" />
           <span className="text-xs uppercase tracking-[0.2em] text-slate-400 font-sans">Diplomatic Luminaries</span>
         </div>
 
-        {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6" data-animate="speakers-header">
           <div>
             <h2 className="font-serif text-3xl sm:text-5xl font-bold tracking-tight text-white">
@@ -39,7 +36,6 @@ export const Speakers: React.FC = () => {
           </div>
         </div>
 
-        {/* Editorial Speakers Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {SPEAKERS_DATA.map((speaker, index) => (
             <div
@@ -47,7 +43,6 @@ export const Speakers: React.FC = () => {
               className="group relative flex flex-col bg-[#0c0c14] rounded-xl border border-white/6 hover:border-amber-500/50 transition-all duration-500 overflow-hidden"
               data-animate={`speaker-card-${index}`}
             >
-              {/* Speaker Portrait with Warm Flame Overlay on Hover */}
               <div className="relative aspect-[4/5] overflow-hidden bg-[#151520]">
                 <img
                   src={speaker.image}
@@ -55,10 +50,8 @@ export const Speakers: React.FC = () => {
                   className="w-full h-full object-cover object-top grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 opacity-90 group-hover:opacity-100"
                 />
                 
-                {/* Gradient Vignette over Photo */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0c0c14] via-[#0c0c14]/30 to-transparent" />
                 
-                {/* Chamber Tag Badge */}
                 <div className="absolute top-3 left-3 z-10">
                   <span className="text-[10px] font-mono font-semibold px-2.5 py-1 rounded bg-black/70 backdrop-blur-md text-amber-400 border border-amber-500/30">
                     {speaker.chamber}
@@ -66,7 +59,6 @@ export const Speakers: React.FC = () => {
                 </div>
               </div>
 
-              {/* Speaker Details */}
               <div className="p-6 flex flex-col justify-between flex-grow">
                 <div>
                   <h3 className="font-serif text-xl font-bold text-white group-hover:text-amber-300 transition-colors mb-1">

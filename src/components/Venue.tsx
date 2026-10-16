@@ -5,7 +5,6 @@ import { MapPin, Navigation, Building, Compass, Plane, Car, Hotel } from 'lucide
 export const Venue: React.FC = () => {
   return (
     <section id="venue" className="relative py-28 overflow-hidden" data-scroll-section="venue">
-      {/* Background ambient lighting */}
       <div 
         className="absolute top-1/3 left-[-5%] w-[600px] h-[600px] rounded-full pointer-events-none"
         style={{
@@ -16,14 +15,12 @@ export const Venue: React.FC = () => {
 
       <div className="section-container relative z-10">
         
-        {/* Section Eyebrow */}
         <div className="flex items-center gap-3 mb-3" data-animate="venue-label">
           <span className="font-mono text-xs font-semibold text-amber-500 tracking-widest">05 // LOCATION</span>
           <span className="w-12 h-[1px] bg-amber-500/30" />
           <span className="text-xs uppercase tracking-[0.2em] text-slate-400 font-sans">The Grand Assembly</span>
         </div>
 
-        {/* Section Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-16 gap-6" data-animate="venue-header">
           <div>
             <h2 className="font-serif text-3xl sm:text-5xl font-bold tracking-tight text-white">
@@ -40,7 +37,6 @@ export const Venue: React.FC = () => {
           </div>
         </div>
 
-        {/* Hero Visual Card: Cinematic Photography & Highlight Overlay */}
         <div 
           className="relative rounded-2xl overflow-hidden border border-white/10 mb-16 shadow-2xl group"
           data-animate="venue-image"
@@ -51,10 +47,8 @@ export const Venue: React.FC = () => {
               alt="The Imperial Congress Palace, Istanbul"
               className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-1000"
             />
-            {/* Cinematic Gradient Mask */}
             <div className="absolute inset-0 bg-gradient-to-t from-[#09090f] via-[#09090f]/40 to-transparent" />
             
-            {/* Floating Venue Tag on Image */}
             <div className="absolute bottom-6 left-6 right-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
               <div className="bg-black/60 backdrop-blur-md p-4 sm:p-5 rounded-xl border border-white/10 max-w-xl">
                 <div className="flex items-center gap-2 text-amber-400 text-xs font-mono mb-1">
@@ -80,7 +74,6 @@ export const Venue: React.FC = () => {
           </div>
         </div>
 
-        {/* 4 Architectural Venue Highlights */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {VENUE_INFO.highlights.map((item, idx) => (
             <div
@@ -104,7 +97,6 @@ export const Venue: React.FC = () => {
           ))}
         </div>
 
-        {/* Travel & Accommodation Brief */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-8 rounded-2xl bg-[#0f0f18] border border-white/8">
           <div className="flex items-start gap-4">
             <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400 shrink-0">

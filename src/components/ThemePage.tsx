@@ -37,7 +37,6 @@ export const ThemePage: React.FC<ThemePageProps> = ({ onNavigate }) => {
 
   return (
     <div className="relative pt-36 pb-24 min-h-screen cinematic-grid">
-      {/* Glow background */}
       <div 
         className="absolute top-1/4 right-1/4 w-[600px] h-[600px] rounded-full pointer-events-none"
         style={{
@@ -48,14 +47,12 @@ export const ThemePage: React.FC<ThemePageProps> = ({ onNavigate }) => {
 
       <div className="section-container relative z-10">
         
-        {/* Eyebrow */}
         <div className="flex items-center gap-3 mb-4">
           <span className="font-mono text-xs font-semibold text-amber-500 tracking-widest">01 // THEME & PHILOSOPHY</span>
           <span className="w-12 h-[1px] bg-amber-500/30" />
           <span className="text-xs uppercase tracking-[0.2em] text-slate-400 font-sans">The Flame Philosophy</span>
         </div>
 
-        {/* Hero Banner for Theme */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-20 items-center">
           <div className="lg:col-span-7">
             <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight mb-6">
@@ -85,7 +82,6 @@ export const ThemePage: React.FC<ThemePageProps> = ({ onNavigate }) => {
           </div>
         </div>
 
-        {/* 4 Pillars of Theme */}
         <div className="mb-20">
           <div className="flex items-center gap-3 mb-8">
             <span className="font-mono text-xs font-semibold text-amber-500 tracking-widest">CORE PILLARS</span>
@@ -123,7 +119,6 @@ export const ThemePage: React.FC<ThemePageProps> = ({ onNavigate }) => {
           </div>
         </div>
 
-        {/* Action Prompt */}
         <div className="p-8 sm:p-10 rounded-2xl bg-gradient-to-r from-[#12121e] to-[#0c0c14] border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div>
             <h3 className="font-serif text-xl sm:text-2xl font-bold text-white mb-2">

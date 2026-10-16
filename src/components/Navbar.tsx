@@ -45,8 +45,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
       >
         <div className="section-container">
           <div className="flex items-center justify-between">
-            
-            {/* Left: Brand Logo & Title */}
             <button
               onClick={() => handleNavClick('home')}
               className="flex items-center gap-3 bg-transparent border-0 cursor-pointer p-0 group text-left"
@@ -63,7 +61,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
               </div>
             </button>
 
-            {/* Center / Right: Desktop Nav Links with Generous Margins & Gap */}
             <nav className="hidden md:flex items-center gap-8">
               <div className="nav-links-container" style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
                 {navLinks.map((link) => {
@@ -87,7 +84,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
                       }}
                     >
                       <span>{link.label}</span>
-                      {/* Underline indicator */}
                       <span
                         className="nav-link-indicator"
                         style={{
@@ -100,7 +96,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
               </div>
             </nav>
 
-            {/* Mobile Toggle Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 rounded-lg bg-white/5 border border-white/10 text-white cursor-pointer hover:bg-white/10 transition-colors"
@@ -114,7 +109,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
         </div>
       </header>
 
-      {/* Fullscreen Mobile Navigation Overlay */}
       <div
         className={`md:hidden fixed inset-0 z-40 bg-[#060608]/98 backdrop-blur-2xl flex flex-col justify-center items-center px-8 transition-all duration-300 ${
           mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'

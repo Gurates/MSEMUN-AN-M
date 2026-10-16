@@ -10,7 +10,6 @@ interface FooterProps {
 export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   return (
     <footer className="relative bg-[#050507] border-t border-white/8 pt-16 pb-12 overflow-hidden">
-      {/* Glow */}
       <div 
         className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[500px] h-[200px] rounded-full pointer-events-none"
         style={{
@@ -22,7 +21,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
       <div className="section-container relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-12 border-b border-white/8 items-center">
           
-          {/* Logo & Motto */}
           <div className="md:col-span-6 flex flex-col items-start">
             <div className="flex items-center gap-3.5 mb-3">
               <FlameLogo size="sm" showText={false} glow={true} />
@@ -45,7 +43,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </p>
           </div>
 
-          {/* Quick Nav Links */}
           <div className="md:col-span-6 flex flex-wrap items-center md:justify-end gap-6 text-xs font-mono">
             <button
               onClick={() => onNavigate('home')}
@@ -72,7 +69,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
         </div>
 
-        {/* Bottom Imprint */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-500">
           <div>
             © {new Date().getFullYear()} MSEMUN Model United Nations Conference. {CONFERENCE_INFO.dates} • Istanbul.

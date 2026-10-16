@@ -36,7 +36,6 @@ export const EmbersCanvas: React.FC<{ className?: string }> = ({ className = '' 
 
     window.addEventListener('resize', handleResize);
 
-    // Color palette for embers
     const colors = [
       'rgba(255, 87, 34, ',
       'rgba(255, 122, 0, ',

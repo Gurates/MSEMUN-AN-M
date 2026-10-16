@@ -39,9 +39,6 @@ export const getDefaultSubject = (name: string, _role: string = 'Delege'): strin
   return `MSEMUN 2026 — Başvurunuz Onaylandı! (${name})`;
 };
 
-/**
- * Pre-prepared Turkish Email Template with automatic placeholder replacement
- */
 export const generateTurkishTemplate = (params: EmailParams): string => {
   const {
     name,
@@ -83,9 +80,6 @@ E-posta: ${senderEmail}
 Web: https://msemun.org`;
 };
 
-/**
- * Pre-prepared English Email Template
- */
 export const generateEnglishTemplate = (params: EmailParams): string => {
   const {
     name,
@@ -136,9 +130,6 @@ export const escapeHtml = (str: string): string => {
     .replace(/'/g, '&#039;');
 };
 
-/**
- * Generates responsive, executive-styled HTML email matching MSEMUN's visual theme
- */
 export const generateHtmlTemplate = (textBody: string, _name?: string): string => {
   const safeText = escapeHtml(textBody || '');
   const formattedBody = safeText
@@ -156,7 +147,6 @@ export const generateHtmlTemplate = (textBody: string, _name?: string): string =
 <body style="margin: 0; padding: 24px 12px; background-color: #060608; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f8fafc;">
   <div style="max-width: 620px; margin: 0 auto; background-color: #0c0c14; border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 14px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.8);">
     
-    <!-- Header Banner -->
     <div style="background: linear-gradient(135deg, #131320 0%, #1f1b2e 100%); padding: 32px 28px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);">
       <div style="display: inline-block; padding: 4px 12px; background-color: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 20px; color: #fbbf24; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px;">
         Secretariat Notice • MSEMUN '26
@@ -169,14 +159,12 @@ export const generateHtmlTemplate = (textBody: string, _name?: string): string =
       </p>
     </div>
 
-    <!-- Content Body -->
     <div style="padding: 28px 24px;">
       <p style="margin: 0 0 16px 0; color: #cbd5e1; line-height: 1.65; font-size: 14px;">
         ${formattedBody}
       </p>
     </div>
 
-    <!-- Footer -->
     <div style="background-color: #08080d; padding: 20px 24px; text-align: center; border-top: 1px solid rgba(255,255,255,0.08); font-size: 11px; color: #64748b;">
       <p style="margin: 0 0 6px 0;">MSEMUN Model United Nations Conference • Istanbul, Turkey</p>
       <p style="margin: 0;">Bu bilgilendirme e-postası resmi MSEMUN Genel Sekreterliği tarafından iletilmiştir.</p>
@@ -187,30 +175,20 @@ export const generateHtmlTemplate = (textBody: string, _name?: string): string =
 </html>`;
 };
 
-/**
- * 1-Click Launch: Open in Google Gmail Web
- */
 export const openInGmail = (to: string, subject: string, body: string): void => {
   const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   window.open(url, '_blank', 'noopener,noreferrer');
 };
 
-/**
- * 1-Click Launch: Open default system mail client (Outlook, Apple Mail, etc.)
- */
 export const openInMailto = (to: string, subject: string, body: string): void => {
   const mailtoUrl = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   window.location.href = mailtoUrl;
 };
 
-/**
- * Send email through backend API (/api/send-email) or fallback to direct client Resend
- */
 export const sendEmailViaApi = async (payload: SendEmailPayload): Promise<SendResult> => {
   const senderEmail = payload.senderEmail || getSenderEmail();
   const senderName = payload.senderName || getSenderName();
 
-  // 1. Try Vite dev server / production API endpoint
   try {
     const res = await fetch('/api/send-email', {
       method: 'POST',
@@ -238,7 +216,6 @@ export const sendEmailViaApi = async (payload: SendEmailPayload): Promise<SendRe
     console.warn('Backend /api/send-email not accessible, trying client direct check...', err);
   }
 
-  // 2. Direct Resend API fallback if VITE_RESEND_API_KEY is available directly in frontend
   const clientResendKey = import.meta.env.VITE_RESEND_API_KEY;
   if (clientResendKey) {
     try {

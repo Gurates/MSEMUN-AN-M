@@ -21,10 +21,8 @@ export const Committees: React.FC<{ onSelectCommittee?: (c: Committee) => void }
 
   return (
     <section id="committees" className="relative py-28 bg-[#08080d]" data-scroll-section="committees">
-      {/* Background divider accents */}
       <div className="section-container">
         
-        {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6" data-animate="committees-header">
           <div>
             <div className="flex items-center gap-3 mb-3">
@@ -37,7 +35,6 @@ export const Committees: React.FC<{ onSelectCommittee?: (c: Committee) => void }
             </h2>
           </div>
 
-          {/* Filter Pills */}
           <div className="flex flex-wrap items-center gap-2 bg-[#12121c] p-1.5 rounded-lg border border-white/6">
             {filters.map((filter) => (
               <button
@@ -55,10 +52,8 @@ export const Committees: React.FC<{ onSelectCommittee?: (c: Committee) => void }
           </div>
         </div>
 
-        {/* Interactive Committee Showcase Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* Left Column: Committee List Cards */}
           <div className="lg:col-span-5 flex flex-col gap-3">
             {filteredCommittees.map((committee) => {
               const isActive = committee.id === activeCommitteeId;
@@ -94,11 +89,9 @@ export const Committees: React.FC<{ onSelectCommittee?: (c: Committee) => void }
             })}
           </div>
 
-          {/* Right Column: Active Chamber Spotlight & Dossier */}
           <div className="lg:col-span-7">
             <div className="p-8 sm:p-10 rounded-2xl bg-[#0f0f18] border border-white/10 relative overflow-hidden shadow-2xl">
               
-              {/* Top Atmospheric Corner Tag */}
               <div className="flex items-center justify-between pb-6 mb-6 border-b border-white/8">
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full bg-orange-500 animate-ping" />
@@ -112,7 +105,6 @@ export const Committees: React.FC<{ onSelectCommittee?: (c: Committee) => void }
                 </div>
               </div>
 
-              {/* Committee Name & Agenda */}
               <div className="mb-8">
                 <span className="text-xs font-mono tracking-widest text-slate-400 uppercase">
                   Full Committee Title
@@ -135,7 +127,6 @@ export const Committees: React.FC<{ onSelectCommittee?: (c: Committee) => void }
                 </p>
               </div>
 
-              {/* Committee Metadata Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-6 border-t border-white/8 mb-8">
                 <div className="p-3.5 rounded-lg bg-white/3 border border-white/5">
                   <span className="text-[10px] font-mono uppercase text-slate-500 block mb-1">Chamber Directorate</span>
@@ -151,7 +142,6 @@ export const Committees: React.FC<{ onSelectCommittee?: (c: Committee) => void }
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex flex-wrap items-center gap-4">
                 <button
                   onClick={() => onSelectCommittee && onSelectCommittee(activeCommittee)}

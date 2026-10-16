@@ -46,7 +46,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [emailModalItem, setEmailModalItem] = useState<any | null>(null);
 
-  // Check existing Supabase session on load
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
@@ -61,7 +60,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     return () => subscription.unsubscribe();
   }, []);
 
-  // Data States for all 5 tables
   const [data, setData] = useState<Record<string, any[]>>({
     registrations: [],
     delegations: [],
@@ -70,7 +68,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     press_apps: []
   });
 
-  // Fetch data when authenticated
   useEffect(() => {
     if (isAuthenticated) {
       fetchAllData();
@@ -161,7 +158,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   };
 
   const handleApprovalSuccess = (updatedId: string) => {
-    // Update local data state so badge switches to approved immediately
     setData(prev => {
       const next = { ...prev };
       for (const key of Object.keys(next)) {
@@ -177,7 +173,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     }
   };
 
-  // Filtered data for active tab, status and search
   const filteredData = useMemo(() => {
     const approvedMap = getApprovedMap();
 
@@ -210,20 +205,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       }));
     }
 
-    // Attach computed approved status
     currentData = currentData.map(item => ({
       ...item,
       isApproved: item.status === 'approved' || !!approvedMap[item.id]
     }));
 
-    // Filter by approval status
     if (statusFilter === 'approved') {
       currentData = currentData.filter(item => item.isApproved);
     } else if (statusFilter === 'pending') {
       currentData = currentData.filter(item => !item.isApproved);
     }
 
-    // Filter by search query
     if (!searchQuery.trim()) return currentData;
 
     const lowerQuery = searchQuery.toLowerCase().trim();
@@ -241,7 +233,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     });
   }, [data, activeTab, statusFilter, searchQuery]);
 
-  // Overall metrics count
   const allApplications = useMemo(() => {
     return [
       ...data.registrations,
@@ -257,7 +248,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     return allApplications.filter(i => i.status === 'approved' || !!approvedMap[i.id]).length;
   }, [allApplications]);
 
-  // CSV Export
   const exportToCSV = () => {
     if (filteredData.length === 0) return;
 
@@ -269,7 +259,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       };
     });
 
-    // Sanitize CSV value against formula injection (=, +, -, @)
     const sanitizeForCSV = (val: any): string => {
       if (val === null || val === undefined) return '""';
       let str = String(val);
@@ -335,9 +324,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     { id: 'press_apps' as TabType, label: 'Basın / Press', icon: FileText }
   ];
 
-  // ═══════════════════════════════════════════════════════════════
-  // 1. AUTH / LOGIN SCREEN (Supabase Auth - Secure & Encrypted)
-  // ═══════════════════════════════════════════════════════════════
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen pt-28 sm:pt-36 pb-16 flex items-center justify-center px-4 bg-[#060608] cinematic-grid">
@@ -414,14 +400,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // 2. MAIN DASHBOARD VIEW
-  // ═══════════════════════════════════════════════════════════════
   return (
     <div className="min-h-screen pt-24 sm:pt-28 pb-16 px-4 sm:px-6 md:px-8 bg-[#060608] cinematic-grid">
       <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* Top Header Bar */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-white/10">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
@@ -465,7 +447,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
           </div>
         </div>
 
-        {/* Status Highlights & Metrics */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="p-4 rounded-xl bg-[#0c0c14]/90 border border-white/10 flex items-center justify-between">
             <div>
@@ -514,7 +495,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
           </div>
         </div>
 
-        {/* Category Tabs */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -550,10 +530,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
           })}
         </div>
 
-        {/* Filter & Search Bar */}
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-[#0c0c14]/90 p-3.5 rounded-xl border border-white/10">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-1">
-            {/* Search Input */}
             <div className="relative flex-1 max-w-md">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
@@ -565,7 +543,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
               />
             </div>
 
-            {/* Status Filter Buttons */}
             <div className="flex items-center gap-1 p-1 rounded-lg bg-black/40 border border-white/10 shrink-0">
               <button
                 type="button"
@@ -613,7 +590,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
           </button>
         </div>
 
-        {/* Applications Table */}
         <div className="rounded-xl bg-[#0c0c14]/90 border border-white/10 overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse min-w-[850px]">
@@ -656,14 +632,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                         onClick={() => setSelectedItem(item)}
                         className="hover:bg-white/5 transition-colors cursor-pointer group"
                       >
-                        {/* Kategori */}
                         <td className="px-4 py-3">
                           <span className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold border ${getBadgeStyle(item.app_type)}`}>
                             {item.app_type}
                           </span>
                         </td>
 
-                        {/* Katılımcı Adı */}
                         <td className="px-4 py-3 font-medium text-white group-hover:text-amber-300 transition-colors">
                           {item.delegation_name ? (
                             <div>
@@ -682,17 +656,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                           )}
                         </td>
 
-                        {/* Okul */}
                         <td className="px-4 py-3 text-slate-300 truncate max-w-[180px]">
                           {item.school || '—'}
                         </td>
 
-                        {/* E-posta */}
                         <td className="px-4 py-3 text-slate-300 font-mono text-[11px] truncate max-w-[200px]">
                           {item.email}
                         </td>
 
-                        {/* Durum Rozeti */}
                         <td className="px-4 py-3 text-center">
                           {approved ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
@@ -707,12 +678,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                           )}
                         </td>
 
-                        {/* Tarih */}
                         <td className="px-4 py-3 text-right font-mono text-slate-400 text-[11px]">
                           {formatDate(item.created_at)}
                         </td>
 
-                        {/* Hızlı İşlem: Onay Maili Gönder / Formu İncele */}
                         <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                           <div className="inline-flex items-center gap-1.5">
                             <button
@@ -741,9 +710,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
 
       </div>
 
-      {/* ═══════════════════════════════════════════════════════════════
-          3. APPLICATION DETAIL MODAL
-          ═══════════════════════════════════════════════════════════════ */}
       {selectedItem && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md overflow-hidden"
@@ -753,7 +719,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
             className="relative w-full max-w-3xl max-h-[92vh] flex flex-col rounded-2xl bg-[#0c0c14] border border-white/20 shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
             <div className="flex items-start justify-between p-5 sm:p-6 border-b border-white/10 bg-[#0f0f1c] shrink-0">
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2">
@@ -804,10 +769,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
               </div>
             </div>
 
-            {/* Scrollable Modal Content */}
             <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-5 text-xs text-slate-300">
 
-              {/* Quick Info Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-xl bg-black/40 border border-white/10">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Mail size={16} className="text-amber-400 shrink-0" />
@@ -848,7 +811,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                 )}
               </div>
 
-              {/* Committee Preferences */}
               {(selectedItem.committee_preference_1 || selectedItem.pref1) && (
                 <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2.5">
                   <h3 className="text-xs uppercase font-mono font-bold text-amber-400">
@@ -877,7 +839,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                 </div>
               )}
 
-              {/* Detailed Form Fields */}
               {Object.entries(selectedItem).map(([key, value]) => {
                 if ([
                   'id', 'created_at', 'full_name', 'email', 'phone', 'school', 'grade',
@@ -922,7 +883,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
 
             </div>
 
-            {/* Modal Footer */}
             <div className="p-4 sm:p-5 border-t border-white/10 bg-[#0f0f1c] flex items-center justify-between">
               <button
                 type="button"
@@ -945,9 +905,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
         </div>
       )}
 
-      {/* ═══════════════════════════════════════════════════════════════
-          4. APPROVAL EMAIL MODAL
-          ═══════════════════════════════════════════════════════════════ */}
       {emailModalItem && (
         <EmailModal
           item={emailModalItem}

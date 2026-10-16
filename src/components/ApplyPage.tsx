@@ -75,7 +75,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
   const [honeypot, setHoneypot] = useState<string>('');
   const [lastSubmitTime, setLastSubmitTime] = useState<number>(0);
 
-  // ── Delegate Form State ──
   const [delegateForm, setDelegateForm] = useState({
     fullName: '',
     school: '',
@@ -91,7 +90,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     references: ''
   });
 
-  // ── Delegation Form State ──
   const [delegationForm, setDelegationForm] = useState({
     fullName: '',
     school: '',
@@ -104,7 +102,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     message: ''
   });
 
-  // ── Chairboard Form State ──
   const [chairboardForm, setChairboardForm] = useState({
     fullName: '',
     school: '',
@@ -127,7 +124,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     references: ''
   });
 
-  // ── Admin Form State ──
   const [adminForm, setAdminForm] = useState({
     fullName: '',
     school: '',
@@ -139,7 +135,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     message: ''
   });
 
-  // ── Press Form State ──
   const [pressForm, setPressForm] = useState({
     fullName: '',
     school: '',
@@ -162,7 +157,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     }));
   };
 
-  // ── Generic Submitter with Anti-Bot Honeypot & Submission Throttling ──
   const handleGenericSubmit = async (
     e: React.FormEvent, 
     validator: () => boolean,
@@ -170,7 +164,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
   ) => {
     e.preventDefault();
 
-    // 1. Bot Detection: If hidden honeypot field is filled, silently fake success
     if (honeypot.trim().length > 0) {
       console.warn('Bot submission trapped via honeypot.');
       setIsSuccess(true);
@@ -178,7 +171,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
       return;
     }
 
-    // 2. Submission Throttling: Prevent rapid double/spam submissions
     const now = Date.now();
     if (now - lastSubmitTime < 3000) {
       return;
@@ -204,7 +196,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     }
   };
 
-  // ── Validate Delegate ──
   const validateDelegate = () => {
     const errs: Record<string, string> = {};
     if (!delegateForm.fullName.trim() || delegateForm.fullName.trim().length < 3) {
@@ -228,7 +219,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     return Object.keys(errs).length === 0;
   };
 
-  // ── Validate Delegation ──
   const validateDelegation = () => {
     const errs: Record<string, string> = {};
     if (!delegationForm.fullName.trim()) errs.fullName = 'Full name is required';
@@ -245,7 +235,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     return Object.keys(errs).length === 0;
   };
 
-  // ── Validate Chairboard ──
   const validateChairboard = () => {
     const errs: Record<string, string> = {};
     if (!chairboardForm.fullName.trim()) errs.fullName = 'Full name is required';
@@ -268,7 +257,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     return Object.keys(errs).length === 0;
   };
 
-  // ── Validate Admin ──
   const validateAdmin = () => {
     const errs: Record<string, string> = {};
     if (!adminForm.fullName.trim()) errs.fullName = 'Full name is required';
@@ -282,7 +270,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     return Object.keys(errs).length === 0;
   };
 
-  // ── Validate Press ──
   const validatePress = () => {
     const errs: Record<string, string> = {};
     if (!pressForm.fullName.trim()) errs.fullName = 'Full name is required';
@@ -296,7 +283,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     return Object.keys(errs).length === 0;
   };
 
-  // ═══ SUCCESS VIEW ═══
   if (isSuccess) {
     return (
       <div className="relative pt-28 sm:pt-36 md:pt-40 pb-16 sm:pb-24 min-h-screen cinematic-grid flex items-center justify-center">
@@ -327,11 +313,9 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     <div className="relative pt-28 sm:pt-36 md:pt-40 pb-16 sm:pb-24 min-h-screen cinematic-grid">
       <div className="section-container relative z-10 max-w-3xl mx-auto px-4 sm:px-6">
         
-        {/* ═══ ROLE SELECTION HUB (EXACT ALAÇATIMUN LAYOUT) ═══ */}
         {activeRole === 'hub' && (
           <div className="w-full flex flex-col items-center">
             
-            {/* Header */}
             <div className="text-center mb-8 sm:mb-12 max-w-xl mx-auto">
               <h1 className="text-3xl sm:text-5xl font-bold text-white mb-3 tracking-tight font-serif">
                 Apply
@@ -341,7 +325,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
               </p>
             </div>
 
-            {/* 2-Column Grid Selection matching screenshot */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 w-full">
               {applicationTypes.map((type) => {
                 const Icon = type.icon;
@@ -355,13 +338,11 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                     }}
                     className="group relative flex items-start gap-4 p-5 sm:p-6 rounded-xl bg-[#0c0c14]/90 border border-white/10 hover:border-white/25 hover:bg-[#131320] transition-all duration-300 cursor-pointer shadow-lg overflow-hidden"
                   >
-                    {/* Left Accent Line on Hover */}
                     <div 
                       className="absolute left-0 top-3 bottom-3 w-1 rounded-r opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                       style={{ backgroundColor: type.color }}
                     />
 
-                    {/* Icon */}
                     <div 
                       className="shrink-0 mt-0.5"
                       style={{ color: type.color }}
@@ -369,7 +350,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                       <Icon size={24} />
                     </div>
 
-                    {/* Content */}
                     <div className="flex flex-col">
                       <h3 
                         className="text-base sm:text-lg font-bold font-sans mb-1 transition-colors"
@@ -389,11 +369,9 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
           </div>
         )}
 
-        {/* ═══ INDIVIDUAL REGISTRATION PAGES ═══ */}
         {activeRole !== 'hub' && (
           <div className="w-full">
             
-            {/* Top Back Navigation */}
             <div className="mb-6 flex items-center justify-between">
               <button
                 onClick={() => {
@@ -412,7 +390,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
               </span>
             </div>
 
-            {/* Anti-Bot Honeypot Field (Invisible to real users, traps automated bot submission) */}
             <div className="hidden" aria-hidden="true" style={{ display: 'none' }}>
               <label htmlFor="hp_company_field">Do not fill this field</label>
               <input
@@ -426,7 +403,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
               />
             </div>
 
-            {/* ═══ 1. DELEGATE FORM ═══ */}
             {activeRole === 'delegate' && (
               <div className="p-6 sm:p-10 rounded-2xl bg-[#0c0c14]/95 border border-white/10 shadow-2xl backdrop-blur-xl">
                 <div className="text-center mb-8 pb-6 border-b border-white/10">
@@ -453,7 +429,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                   )} 
                   className="space-y-8"
                 >
-                  {/* General Information */}
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-4">General Information</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -524,7 +499,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                     </div>
                   </div>
 
-                  {/* MUN Experience */}
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-4">MUN Experience</h3>
                     <div>
@@ -542,7 +516,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Committee Preferences */}
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-4">Committee Preferences *</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -591,7 +564,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Motivation Letter */}
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-4">Motivation Letter *</h3>
                     <div>
@@ -607,7 +579,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                         className={`w-full px-4 py-2.5 rounded-lg bg-black/40 border text-sm text-white focus:outline-none ${errors.motivationLetter ? 'border-red-500' : 'border-white/12 focus:border-[#00b4d8]'}`}
                       />
 
-                      {/* Character Bar */}
                       <div className="mt-2 h-1 bg-white/10 rounded-full overflow-hidden">
                         <div 
                           className="h-full transition-all duration-300 bg-[#00b4d8]"
@@ -621,7 +592,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Additional Info & References */}
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-4">
                       Additional Info & References <span className="text-slate-500 text-xs font-normal">(optional)</span>
@@ -664,7 +634,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
               </div>
             )}
 
-            {/* ═══ 2. DELEGATION FORM ═══ */}
             {activeRole === 'delegation' && (
               <div className="p-6 sm:p-10 rounded-2xl bg-[#0c0c14]/95 border border-white/10 shadow-2xl backdrop-blur-xl">
                 <div className="text-center mb-8 pb-6 border-b border-white/10">
@@ -745,7 +714,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Contact Details */}
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-4">Contact Details</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -803,7 +771,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Additional Information */}
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-4">Additional Information</h3>
                     <div>
@@ -830,7 +797,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
               </div>
             )}
 
-            {/* ═══ 3. CHAIRBOARD FORM ═══ */}
             {activeRole === 'chairboard' && (
               <div className="p-6 sm:p-10 rounded-2xl bg-[#0c0c14]/95 border border-white/10 shadow-2xl backdrop-blur-xl">
                 <div className="text-center mb-8 pb-6 border-b border-white/10">
@@ -864,7 +830,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                   )} 
                   className="space-y-8"
                 >
-                  {/* Personal Details */}
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-4">Personal Details</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -935,7 +900,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                     </div>
                   </div>
 
-                  {/* MUN Experience */}
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-4">MUN Experience</h3>
                     <div>
@@ -951,7 +915,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Committee Preferences */}
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-4">Committee Preferences</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1000,7 +963,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Motivation */}
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-4">Motivation</h3>
                     <div>
@@ -1017,7 +979,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Technical Details */}
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-4">Technical Details (Optional)</h3>
                     <div className="space-y-4">
@@ -1047,7 +1008,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Scenario Questions */}
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-4">Scenario Questions</h3>
                     <div className="space-y-4">
@@ -1126,7 +1086,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Additional Details */}
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-4">
                       Additional Details <span className="text-slate-500 text-xs font-normal">(Optional)</span>
@@ -1169,7 +1128,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
               </div>
             )}
 
-            {/* ═══ 4. ADMIN STAFF FORM ═══ */}
             {activeRole === 'admin' && (
               <div className="p-6 sm:p-10 rounded-2xl bg-[#0c0c14]/95 border border-white/10 shadow-2xl backdrop-blur-xl">
                 <div className="text-center mb-8 pb-6 border-b border-white/10">
@@ -1262,7 +1220,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Experience & References */}
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-4">Experience & References (Optional)</h3>
                     <div className="space-y-4">
@@ -1292,7 +1249,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Additional Details */}
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-4">Additional Details (Optional)</h3>
                     <div>
@@ -1319,7 +1275,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
               </div>
             )}
 
-            {/* ═══ 5. PRESS CORPS FORM ═══ */}
             {activeRole === 'press' && (
               <div className="p-6 sm:p-10 rounded-2xl bg-[#0c0c14]/95 border border-white/10 shadow-2xl backdrop-blur-xl">
                 <div className="text-center mb-8 pb-6 border-b border-white/10">
@@ -1413,7 +1368,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Experience & Equipment */}
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-4">Experience & Equipment (Optional)</h3>
                     <div className="space-y-4">
@@ -1455,7 +1409,6 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Additional Details */}
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-4">Additional Details (Optional)</h3>
                     <div>

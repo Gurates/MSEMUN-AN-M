@@ -28,7 +28,6 @@ export const About: React.FC = () => {
 
   return (
     <section id="about" className="relative py-28 overflow-hidden" data-scroll-section="about">
-      {/* Subtle Background Glow */}
       <div 
         className="absolute top-1/2 right-[-10%] w-[500px] h-[500px] rounded-full pointer-events-none"
         style={{
@@ -38,15 +37,12 @@ export const About: React.FC = () => {
       />
 
       <div className="section-container relative z-10">
-        
-        {/* Section Index & Eyebrow */}
         <div className="flex items-center gap-3 mb-4" data-animate="about-label">
           <span className="font-mono text-xs font-semibold text-amber-500 tracking-widest">01 // ESSENCE</span>
           <span className="w-12 h-[1px] bg-amber-500/30" />
           <span className="text-xs uppercase tracking-[0.2em] text-slate-400 font-sans">The Flame Philosophy</span>
         </div>
 
-        {/* Section Header */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-20 items-end">
           <div className="lg:col-span-7" data-animate="about-title">
             <h2 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
@@ -60,7 +56,6 @@ export const About: React.FC = () => {
           </div>
         </div>
 
-        {/* 4 Pillars Grid - Clean Architectural Design without generic card clutter */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-24" data-animate="about-pillars">
           {pillars.map((pillar, idx) => {
             const Icon = pillar.icon;
@@ -69,7 +64,6 @@ export const About: React.FC = () => {
                 key={pillar.title}
                 className="group relative p-7 rounded-xl bg-[#0c0c13] border border-white/6 hover:border-amber-500/40 transition-all duration-400 flex flex-col justify-between"
               >
-                {/* Corner accent */}
                 <div className="absolute top-0 right-0 w-8 h-8 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="absolute top-2 right-2 w-2 h-2 border-t border-r border-amber-400" />
                 </div>
@@ -96,12 +90,10 @@ export const About: React.FC = () => {
           })}
         </div>
 
-        {/* Conference Impact Stats Strip */}
         <div 
           className="relative rounded-2xl bg-gradient-to-b from-[#11111a] to-[#0a0a0f] border border-white/8 p-8 sm:p-12 overflow-hidden shadow-2xl"
           data-animate="about-stats"
         >
-          {/* Subtle Glow backdrop */}
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-transparent pointer-events-none" />
 
           <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12">

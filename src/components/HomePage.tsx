@@ -3,11 +3,6 @@ import { ArrowRight, Compass, Landmark, Flame, Users, MapPin } from 'lucide-reac
 import { PageView } from './Navbar';
 import { EmbersCanvas } from './EmbersCanvas';
 
-// ════════════════════════════════════════════════════════════════
-// KONFERANS HEDEF TARİHİ
-// Dilediğiniz tarihi buradan güncelleyebilirsiniz.
-// Format: 'YYYY-MM-DDTHH:mm:ss' (Örnek: '2026-11-20T09:00:00')
-// ════════════════════════════════════════════════════════════════
 export const DEFAULT_TARGET_DATE = '2026-11-20T09:00:00';
 
 interface HomePageProps {
@@ -58,7 +53,6 @@ export const HomePage: React.FC<HomePageProps> = ({
     return () => clearInterval(interval);
   }, [targetDate]);
 
-  // Real-time scroll tracker with RAF for fluid 60/120fps parallax response
   useEffect(() => {
     let ticking = false;
     const handleScroll = () => {
@@ -80,21 +74,16 @@ export const HomePage: React.FC<HomePageProps> = ({
     window.scrollTo({ top: 180, behavior: 'smooth' });
   };
 
-  // ── Parallax & Motion Depth Calculations ──
-  // Background logo glides upward and zooms with rich cinematic parallax
   const bgShiftY = scrollY * 0.42;
   const bgScale = 1 + Math.min(scrollY * 0.0004, 0.07);
   const bgBlur = Math.min(scrollY * 0.01, 3.5);
 
-  // Floating embers draft upwards faster to enhance atmospheric motion
   const embersShiftY = scrollY * 0.75;
 
-  // Fade & visibility thresholds
   const promptOpacity = Math.max(0, 1 - scrollY / 35);
   const applyOpacity = Math.min(1, Math.max(0, (scrollY - 20) / 60));
   const isApplyActive = scrollY > 20;
 
-  // Conference feature cards ascend and fade in smoothly as you scroll
   const cardsOpacity = Math.min(1, Math.max(0, (scrollY - 35) / 90));
   const cardsTranslateY = Math.max(0, (1 - cardsOpacity) * 32);
 
@@ -132,7 +121,6 @@ export const HomePage: React.FC<HomePageProps> = ({
         position: 'relative'
       }}
     >
-      {/* ── 1. Fullscreen Responsive Logo with Multi-Plane Parallax Depth ── */}
       <div 
         className="fixed inset-x-0 top-0 pointer-events-none" 
         style={{ 
@@ -152,12 +140,10 @@ export const HomePage: React.FC<HomePageProps> = ({
           className="w-full h-full block"
           style={{ width: '100%', height: '100%', display: 'block' }}
         >
-          {/* PC / Bilgisayar / Yatay ekranlar için görsel */}
           <source 
             media="(min-aspect-ratio: 1/1), (min-width: 768px)" 
             srcSet="/images/msemun-bg-desktop.jpg" 
           />
-          {/* Telefon / Mobil / Dikey ekranlar için görsel */}
           <img
             src="/images/msemun-bg-mobile.jpg"
             alt="MSEMUN 2026 Official Logo"
@@ -172,7 +158,6 @@ export const HomePage: React.FC<HomePageProps> = ({
           />
         </picture>
 
-        {/* Ambient Subtle Vignette & Gradient for supreme depth & legibility */}
         <div 
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -187,7 +172,6 @@ export const HomePage: React.FC<HomePageProps> = ({
         />
       </div>
 
-      {/* ── 2. Floating Ambient Embers with Parallax Draft ── */}
       <div 
         className="fixed inset-0 pointer-events-none"
         style={{ 
@@ -201,7 +185,6 @@ export const HomePage: React.FC<HomePageProps> = ({
         <EmbersCanvas className="opacity-35" />
       </div>
 
-      {/* ── 3. Foreground Flow (Moves naturally with document scroll) ── */}
       <div 
         className="relative z-10 w-full flex flex-col items-center px-4"
         style={{
@@ -212,7 +195,6 @@ export const HomePage: React.FC<HomePageProps> = ({
       >
         <div className="relative flex flex-col items-center justify-center text-center max-w-4xl mx-auto w-full">
           
-          {/* Responsive Digital Countdown Timer */}
           <div className="countdown-container !mt-0 mb-4 sm:mb-6 backdrop-blur-md p-3 sm:p-5 rounded-2xl bg-black/60 border border-amber-500/30 shadow-[0_12px_45px_rgba(0,0,0,0.85)] transition-shadow duration-300">
             {renderDigitGroup(timeLeft.days, 'DAYS')}
             <span className="countdown-separator">:</span>
@@ -223,10 +205,8 @@ export const HomePage: React.FC<HomePageProps> = ({
             {renderDigitGroup(timeLeft.seconds, 'SECONDS', true)}
           </div>
 
-          {/* Interactive Action Hub: Scroll Prompt & Emerging Apply Button */}
           <div className="relative flex flex-col items-center justify-center min-h-[60px] sm:min-h-[70px] w-full">
             
-            {/* Scroll Prompt (Fades out seamlessly as soon as you scroll down) */}
             <div 
               onClick={handleScrollToApply}
               className="absolute flex flex-col items-center gap-1.5 cursor-pointer select-none"
@@ -243,7 +223,6 @@ export const HomePage: React.FC<HomePageProps> = ({
               <span className="text-amber-400 text-xs sm:text-sm leading-none animate-bounce">↓</span>
             </div>
 
-            {/* Apply & Explore Action Buttons (Smoothly rise and fade in with luminous glow) */}
             <div
               style={{
                 opacity: applyOpacity,
@@ -284,7 +263,6 @@ export const HomePage: React.FC<HomePageProps> = ({
 
           </div>
 
-          {/* ── 4. Prestige Conference Feature Cards (Rise into view on scroll) ── */}
           <div 
             className="w-full max-w-5xl mt-14 sm:mt-20 px-2 select-text"
             style={{
@@ -301,7 +279,6 @@ export const HomePage: React.FC<HomePageProps> = ({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-left">
-              {/* Card 1 */}
               <div 
                 onClick={() => onNavigate('committees')}
                 className="p-5 rounded-2xl bg-black/65 border border-amber-500/25 backdrop-blur-md hover:border-amber-500/50 hover:bg-black/80 transition-all duration-300 cursor-pointer group shadow-[0_8px_30px_rgba(0,0,0,0.6)]"
@@ -318,7 +295,6 @@ export const HomePage: React.FC<HomePageProps> = ({
                 </p>
               </div>
 
-              {/* Card 2 */}
               <div 
                 onClick={() => onNavigate('committees')}
                 className="p-5 rounded-2xl bg-black/65 border border-amber-500/25 backdrop-blur-md hover:border-amber-500/50 hover:bg-black/80 transition-all duration-300 cursor-pointer group shadow-[0_8px_30px_rgba(0,0,0,0.6)]"
@@ -335,7 +311,6 @@ export const HomePage: React.FC<HomePageProps> = ({
                 </p>
               </div>
 
-              {/* Card 3 */}
               <div 
                 onClick={() => onNavigate('apply')}
                 className="p-5 rounded-2xl bg-black/65 border border-amber-500/25 backdrop-blur-md hover:border-amber-500/50 hover:bg-black/80 transition-all duration-300 cursor-pointer group shadow-[0_8px_30px_rgba(0,0,0,0.6)]"
@@ -352,7 +327,6 @@ export const HomePage: React.FC<HomePageProps> = ({
                 </p>
               </div>
 
-              {/* Card 4 */}
               <div className="p-5 rounded-2xl bg-black/65 border border-amber-500/25 backdrop-blur-md hover:border-amber-500/50 transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.6)]">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mb-3.5 text-amber-400">
                   <MapPin className="w-5 h-5" />
@@ -366,7 +340,6 @@ export const HomePage: React.FC<HomePageProps> = ({
               </div>
             </div>
 
-            {/* Subtle Elegant Footer Credit */}
             <div className="text-center pt-16 pb-14 border-t border-amber-500/15 mt-16">
               <p className="text-[11px] font-mono text-slate-400 uppercase tracking-widest">
                 MSEMUN XXVI // MODEL UNITED NATIONS • ALL RIGHTS RESERVED

@@ -30,7 +30,6 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
     setActiveIndex((prev) => (prev > 0 ? prev - 1 : prev));
   };
 
-  // Wheel & Trackpad scroll listener for 3D card stack pass
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       if (Math.abs(e.deltaY) < 25) return;
@@ -64,7 +63,6 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
     };
   }, [activeIndex]);
 
-  // Touch Swipe Gesture Listener for Mobile
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
     touchStartX.current = e.touches[0].clientX;
@@ -74,7 +72,6 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
     const deltaY = touchStartY.current - e.changedTouches[0].clientY;
     const deltaX = touchStartX.current - e.changedTouches[0].clientX;
 
-    // Detect if vertical or horizontal swipe is dominant
     if (Math.abs(deltaY) > 40 || Math.abs(deltaX) > 40) {
       if (deltaY > 40 || deltaX > 40) {
         handleNext();
@@ -84,7 +81,6 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
     }
   };
 
-  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
@@ -112,7 +108,6 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
         perspective: '1400px'
       }}
     >
-      {/* Background Ambience Layers */}
       <div 
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] sm:w-[800px] h-[700px] sm:h-[800px] pointer-events-none rounded-full"
         style={{
@@ -124,7 +119,6 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
 
       <div className="section-container relative z-10 w-full flex-grow flex flex-col justify-between">
         
-        {/* Top Header & Chamber Selector (Comfortably Spaced Below Navbar) */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-5 mb-2 sm:mb-4">
           <div>
             <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
@@ -141,7 +135,6 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
             </h1>
           </div>
 
-          {/* Chamber Quick-Selector Pills */}
           <div className="flex items-center gap-1.5 sm:gap-2 bg-[#0e0e16]/95 p-1.5 rounded-xl border border-white/10 backdrop-blur-md overflow-x-auto no-scrollbar max-w-full shadow-lg">
             {COMMITTEES_DATA.map((c, i) => (
               <button
@@ -166,10 +159,8 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
           </div>
         </div>
 
-        {/* 3D Stack Stage */}
         <div className="relative w-full h-[550px] sm:h-[620px] md:h-[650px] my-auto flex items-center justify-center">
           
-          {/* Card Stack */}
           {COMMITTEES_DATA.map((committee, index) => {
             const diff = index - activeIndex;
             const isPast = diff < 0;
@@ -221,7 +212,6 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
                     : '0 15px 40px -15px rgba(0, 0, 0, 0.6)'
                 }}
               >
-                {/* Card Top Row: Number & Level Badge */}
                 <div className="flex items-center justify-between text-xs tracking-widest uppercase pb-2 sm:pb-2.5 border-b border-white/8 shrink-0">
                   <div className="flex items-center gap-2 sm:gap-3">
                     <span className="font-serif italic text-xl sm:text-2xl font-bold text-amber-400">
@@ -237,7 +227,6 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
                   </span>
                 </div>
 
-                {/* Card Center: High-Definition Chamber Artwork */}
                 <div 
                   onClick={(e) => {
                     e.stopPropagation();
@@ -246,14 +235,12 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
                   className="relative my-2 w-full flex-1 min-h-[140px] max-h-[250px] rounded-xl overflow-hidden border border-white/10 bg-[#06060c] group flex items-center justify-center cursor-pointer shrink"
                   title="Click to view full official poster"
                 >
-                  {/* Ambient Blurred Aura from the actual artwork */}
                   <img
                     src={committee.image}
                     alt=""
                     aria-hidden="true"
                     className="absolute inset-0 w-full h-full object-cover filter blur-md scale-110 opacity-35 pointer-events-none"
                   />
-                  {/* Main Artwork - perfectly contained without clipping titles or logo */}
                   <img
                     src={committee.image}
                     alt={committee.name}
@@ -261,20 +248,17 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/10 pointer-events-none z-10" />
                   
-                  {/* Floating Flame Tag inside artwork */}
                   <div className="absolute bottom-2 left-2 sm:bottom-2.5 sm:left-2.5 px-2.5 sm:px-3 py-1 rounded-md bg-black/80 backdrop-blur-md border border-white/15 text-[10px] sm:text-[11px] font-mono text-amber-300 flex items-center gap-1.5 shadow-lg z-20">
                     <Flame className="w-3.5 h-3.5 text-orange-400" />
                     <span>{committee.flameFocus}</span>
                   </div>
 
-                  {/* Subtle Zoom / Expand Hint on hover */}
                   <div className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 px-2 py-0.5 sm:py-1 rounded-md bg-black/70 backdrop-blur-md border border-white/10 text-[9px] sm:text-[10px] font-mono text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex items-center gap-1">
                     <Maximize2 className="w-3 h-3 text-amber-400" />
                     <span>POSTER</span>
                   </div>
                 </div>
 
-                {/* Card Bottom Row: Title, Agenda & Action Button */}
                 <div className={`pt-1 sm:pt-2 shrink-0 transition-opacity duration-300 ${!isActive ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                   <div className="mb-1.5 sm:mb-2">
                     <h2 className="font-serif text-base sm:text-xl md:text-2xl font-bold text-white leading-tight">
@@ -285,7 +269,6 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
                     </p>
                   </div>
 
-                  {/* Staff Preview Line */}
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] sm:text-[11px] font-mono text-slate-300 mb-2">
                     {committee.usg && (
                       <span className="flex items-center gap-1">
@@ -330,7 +313,6 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
             );
           })}
 
-          {/* Right Floating Live Dossier Card (Desktop Only) */}
           <div className="hidden xl:flex flex-col justify-between absolute right-4 top-1/2 -translate-y-1/2 w-[320px] p-6 rounded-2xl bg-[#0f0f1a]/95 border border-white/12 backdrop-blur-xl shadow-2xl z-30 max-h-[90%] overflow-y-auto no-scrollbar">
             <div>
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/8">
@@ -345,7 +327,6 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
                 </span>
               </div>
 
-              {/* Dossier Poster Preview */}
               <div 
                 onClick={() => setSelectedPosterCommittee(activeCommittee)}
                 className="relative w-full h-36 rounded-xl overflow-hidden border border-white/10 bg-black/60 mb-3 group cursor-pointer flex items-center justify-center"
@@ -436,7 +417,6 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
             </div>
           </div>
 
-          {/* Vertical Scroll / Nav Controls on Left */}
           <div className="hidden sm:flex absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 flex-col items-center gap-3 z-30">
             <button
               onClick={handlePrev}
@@ -450,7 +430,6 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
               <ChevronUp className="w-4 h-4" />
             </button>
 
-            {/* Vertical Indicator Dots */}
             <div className="flex flex-col items-center gap-2 py-2">
               {COMMITTEES_DATA.map((_, i) => (
                 <div
@@ -480,7 +459,6 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
 
         </div>
 
-        {/* Bottom Status Bar */}
         <div className="flex items-center justify-between text-[10px] sm:text-xs font-mono text-slate-400 pt-2 border-t border-white/8">
           <span>
             CHAMBER: <strong className="text-amber-400">{String(activeIndex + 1).padStart(2, '0')} // {activeCommittee.acronym}</strong>
@@ -492,7 +470,6 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
 
       </div>
 
-      {/* ── Official Poster Lightbox Modal ── */}
       {selectedPosterCommittee && (
         <div 
           onClick={() => setSelectedPosterCommittee(null)}
@@ -503,7 +480,6 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
             onClick={(e) => e.stopPropagation()}
             className="relative max-w-4xl w-full max-h-[94vh] flex flex-col items-center justify-between rounded-2xl border border-white/15 bg-[#0a0a12]/95 p-3 sm:p-5 shadow-[0_25px_80px_rgba(0,0,0,0.95)] overflow-hidden"
           >
-            {/* Modal Header */}
             <div className="w-full flex items-center justify-between pb-2.5 mb-2 border-b border-white/10">
               <div className="flex items-center gap-2 sm:gap-3 truncate pr-2">
                 <span className="font-mono text-[11px] sm:text-xs font-bold text-amber-400 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 shrink-0">
@@ -523,7 +499,6 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
               </button>
             </div>
 
-            {/* Poster Image */}
             <div className="relative w-full flex-grow flex items-center justify-center overflow-hidden rounded-xl bg-black/60 p-1 min-h-[50vh] max-h-[74vh]">
               <img
                 src={selectedPosterCommittee.image}
@@ -532,7 +507,6 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
               />
             </div>
 
-            {/* Modal Footer with Apply CTA */}
             <div className="w-full flex items-center justify-between pt-2.5 mt-2 border-t border-white/10">
               <span className="text-[10px] sm:text-xs font-mono text-slate-400">
                 Official MSEMUN XXVI Promotional Artwork

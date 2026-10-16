@@ -13,8 +13,6 @@ function emailApiPlugin(env: Record<string, string>): Plugin {
           res.end(JSON.stringify({ error: 'Method Not Allowed' }));
           return;
         }
-
-        // Restrict to same-origin requests to prevent open mail relay exploitation
         const origin = (req.headers['origin'] || req.headers['referer'] || '') as string;
         const host = (req.headers['host'] || '') as string;
         if (origin && host && !origin.includes(host)) {
@@ -47,7 +45,6 @@ function emailApiPlugin(env: Record<string, string>): Plugin {
             const smtpUser = env.SMTP_USER;
             const smtpPass = env.SMTP_PASS;
 
-            // 1. Resend API if provided
             if (resendApiKey) {
               const resendRes = await fetch('https://api.resend.com/emails', {
                 method: 'POST',
@@ -78,7 +75,6 @@ function emailApiPlugin(env: Record<string, string>): Plugin {
               }
             }
 
-            // 2. SMTP if provided
             if (smtpUser && smtpPass) {
               const transporter = nodemailer.createTransport({
                 host: env.SMTP_HOST || 'smtp.gmail.com',
@@ -105,7 +101,6 @@ function emailApiPlugin(env: Record<string, string>): Plugin {
               return;
             }
 
-            // 3. Not configured
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify({
@@ -125,7 +120,6 @@ function emailApiPlugin(env: Record<string, string>): Plugin {
   };
 }
 
-// https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 

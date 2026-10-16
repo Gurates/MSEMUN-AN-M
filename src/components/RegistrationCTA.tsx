@@ -48,7 +48,6 @@ export const RegistrationCTA: React.FC<RegistrationCTAProps> = ({ onRegisterClic
 
   return (
     <section className="relative py-28 overflow-hidden bg-gradient-to-b from-[#060608] via-[#0e0d16] to-[#060608]" data-scroll-section="cta">
-      {/* Radiant Torch Background Aura */}
       <div 
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] pointer-events-none rounded-full"
         style={{
@@ -59,7 +58,6 @@ export const RegistrationCTA: React.FC<RegistrationCTAProps> = ({ onRegisterClic
 
       <div className="section-container relative z-10">
         
-        {/* Main CTA Centerpiece */}
         <div className="max-w-4xl mx-auto text-center mb-16" data-animate="cta-heading">
           <div className="inline-flex items-center justify-center mb-6">
             <FlameLogo size="md" showText={false} glow={true} />
@@ -87,7 +85,6 @@ export const RegistrationCTA: React.FC<RegistrationCTAProps> = ({ onRegisterClic
           </button>
         </div>
 
-        {/* 3 Tier Cards Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {tiers.map((tier, idx) => {
             const Icon = tier.icon;
@@ -101,7 +98,6 @@ export const RegistrationCTA: React.FC<RegistrationCTAProps> = ({ onRegisterClic
                     : 'bg-[#0b0b12] border border-white/8 hover:border-white/20'
                 }`}
               >
-                {/* Badge */}
                 <div className="flex items-center justify-between mb-6">
                   <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-amber-400">
                     <Icon className="w-5 h-5" />
@@ -123,7 +119,6 @@ export const RegistrationCTA: React.FC<RegistrationCTAProps> = ({ onRegisterClic
                     {tier.desc}
                   </p>
 
-                  {/* Feature Checklist */}
                   <div className="space-y-3 pt-6 border-t border-white/8 mb-8">
                     {tier.features.map((feat) => (
                       <div key={feat} className="flex items-start gap-2.5 text-xs text-slate-300">

@@ -25,14 +25,12 @@ export const Program: React.FC = () => {
     <section id="program" className="relative py-28 bg-[#09090f]" data-scroll-section="program">
       <div className="section-container">
         
-        {/* Section Eyebrow */}
         <div className="flex items-center gap-3 mb-3" data-animate="program-label">
           <span className="font-mono text-xs font-semibold text-amber-500 tracking-widest">04 // ITINERARY</span>
           <span className="w-12 h-[1px] bg-amber-500/30" />
           <span className="text-xs uppercase tracking-[0.2em] text-slate-400 font-sans">Three-Day Deliberation</span>
         </div>
 
-        {/* Section Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-16 gap-6" data-animate="program-header">
           <div>
             <h2 className="font-serif text-3xl sm:text-5xl font-bold tracking-tight text-white">
@@ -43,7 +41,6 @@ export const Program: React.FC = () => {
             </p>
           </div>
 
-          {/* Day Navigation Tabs */}
           <div className="flex items-center gap-2 p-1.5 rounded-xl bg-[#12121c] border border-white/6 self-start lg:self-auto">
             {SCHEDULE_DATA.map((day, idx) => (
               <button
@@ -67,7 +64,6 @@ export const Program: React.FC = () => {
           </div>
         </div>
 
-        {/* Day Header Banner */}
         <div className="p-6 rounded-xl bg-[#101018] border border-white/8 mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
@@ -88,7 +84,6 @@ export const Program: React.FC = () => {
           </span>
         </div>
 
-        {/* Timeline Itinerary Items */}
         <div className="space-y-4">
           {activeDay.sessions.map((session, idx) => {
             const badge = getTypeBadge(session.type);
@@ -97,7 +92,6 @@ export const Program: React.FC = () => {
                 key={idx}
                 className="group relative p-6 sm:p-7 rounded-xl bg-[#0c0c14] border border-white/6 hover:border-amber-500/40 hover:bg-[#11111c] transition-all duration-300 grid grid-cols-1 md:grid-cols-12 gap-4 items-center"
               >
-                {/* Time Node */}
                 <div className="md:col-span-3 flex items-center gap-3">
                   <div className="w-2.5 h-2.5 rounded-full bg-amber-500 group-hover:shadow-[0_0_10px_rgba(255,140,0,0.8)] transition-shadow" />
                   <div className="font-mono text-sm sm:text-base font-bold text-white tracking-wide">
@@ -105,7 +99,6 @@ export const Program: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Session Details */}
                 <div className="md:col-span-6">
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${badge.color}`}>
@@ -122,7 +115,6 @@ export const Program: React.FC = () => {
                   )}
                 </div>
 
-                {/* Location Marker */}
                 <div className="md:col-span-3 flex items-center md:justify-end gap-2 text-xs font-mono text-slate-400">
                   <MapPin className="w-3.5 h-3.5 text-amber-500/70" />
                   <span>{session.location}</span>

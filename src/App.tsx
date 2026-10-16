@@ -7,7 +7,6 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { VideoIntro } from './components/VideoIntro';
 
 export const App: React.FC = () => {
-  // Determine initial page from URL path or hash (e.g. /admin or #admin)
   const getInitialPage = (): PageView => {
     const path = window.location.pathname.toLowerCase();
     const hash = window.location.hash.toLowerCase();
@@ -25,7 +24,6 @@ export const App: React.FC = () => {
 
   const initialPage = getInitialPage();
 
-  // Check if intro was already played in this browser session (skip for direct /admin access)
   const [showIntro, setShowIntro] = useState<boolean>(() => {
     if (initialPage === 'admin') return false;
     try {
@@ -38,7 +36,6 @@ export const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<PageView>(initialPage);
   const [selectedCommitteeForApply, setSelectedCommitteeForApply] = useState<string>('unwomen');
 
-  // Handle URL history and browser back/forward buttons
   useEffect(() => {
     const handlePopState = () => {
       const page = getInitialPage();
@@ -82,12 +79,10 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#060608] text-[#f8fafc] flex flex-col">
-      {/* Cinematic Fullscreen Video Intro (skipped if /admin or already played) */}
       {isIntroActive && (
         <VideoIntro onComplete={handleIntroComplete} />
       )}
 
-      {/* Main Website Container */}
       <div 
         className={`flex flex-col flex-grow transition-opacity duration-1000 ${
           isIntroActive ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
@@ -96,12 +91,10 @@ export const App: React.FC = () => {
           transition: 'opacity 1s cubic-bezier(0.16, 1, 0.3, 1)'
         }}
       >
-        {/* Navigation Header (hidden on admin portal for full dashboard width) */}
         {currentPage !== 'admin' && (
           <Navbar currentPage={currentPage} onNavigate={handleNavigate} />
         )}
 
-        {/* Main View Router */}
         <main className="flex-grow">
           {currentPage === 'home' && (
             <HomePage onNavigate={handleNavigate} />

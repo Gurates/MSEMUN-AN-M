@@ -61,7 +61,6 @@ export const EmailModal: React.FC<EmailModalProps> = ({
   const senderEmail = getSenderEmail();
   const senderName = getSenderName();
 
-  // Initialize or re-populate template when language changes
   useEffect(() => {
     const params: EmailParams = {
       name: applicantName,
@@ -140,10 +139,8 @@ export const EmailModal: React.FC<EmailModalProps> = ({
   };
 
   const completeApprovalFlow = async (_note: string) => {
-    // 1. Mark in persistent localStorage
     markApplicationApproved(item.id, applicantEmail, senderEmail);
 
-    // 2. Try updating Supabase database
     try {
       const resolvedTable = item._table || tableName || 'registrations';
       const { error } = await supabase
@@ -158,7 +155,6 @@ export const EmailModal: React.FC<EmailModalProps> = ({
       console.warn('Supabase update attempt:', e);
     }
 
-    // 3. Notify parent component to update UI state
     onSuccess(item.id);
   };
 
@@ -171,7 +167,6 @@ export const EmailModal: React.FC<EmailModalProps> = ({
         className="relative w-full max-w-2xl max-h-[92vh] flex flex-col rounded-2xl bg-[#0c0c14] border border-amber-500/30 shadow-2xl shadow-amber-500/10 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-start justify-between p-5 border-b border-white/10 bg-[#11111c] shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
@@ -199,7 +194,6 @@ export const EmailModal: React.FC<EmailModalProps> = ({
           </button>
         </div>
 
-        {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 text-xs">
 
           {sentSuccess ? (
@@ -222,7 +216,6 @@ export const EmailModal: React.FC<EmailModalProps> = ({
             </div>
           ) : (
             <>
-              {/* Recipient & Sender Card */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-black/40 border border-white/10">
                 <div>
                   <div className="text-[10px] font-mono uppercase text-slate-400 mb-1 flex items-center gap-1">
@@ -245,7 +238,6 @@ export const EmailModal: React.FC<EmailModalProps> = ({
                 </div>
               </div>
 
-              {/* Language / Template Tabs */}
               <div className="flex items-center justify-between gap-2 pt-1">
                 <div className="flex items-center gap-1.5 p-1 rounded-lg bg-black/50 border border-white/10">
                   <button
@@ -283,7 +275,6 @@ export const EmailModal: React.FC<EmailModalProps> = ({
                 </button>
               </div>
 
-              {/* Subject Line Input */}
               <div className="space-y-1">
                 <label className="block text-[11px] font-mono uppercase text-slate-400">
                   E-posta Konusu (Subject)
@@ -296,7 +287,6 @@ export const EmailModal: React.FC<EmailModalProps> = ({
                 />
               </div>
 
-              {/* Body Textarea with Auto-substituted Name */}
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <label className="block text-[11px] font-mono uppercase text-slate-400">
@@ -312,7 +302,6 @@ export const EmailModal: React.FC<EmailModalProps> = ({
                 />
               </div>
 
-              {/* Status or Error Banner */}
               {statusMessage && (
                 <div
                   className={`p-3 rounded-lg border flex items-start gap-2.5 ${
@@ -328,7 +317,6 @@ export const EmailModal: React.FC<EmailModalProps> = ({
                 </div>
               )}
 
-              {/* Configuration Help Drawer */}
               <div className="pt-1">
                 <button
                   type="button"
@@ -367,7 +355,6 @@ export const EmailModal: React.FC<EmailModalProps> = ({
 
         </div>
 
-        {/* Modal Footer / Sending Actions */}
         {!sentSuccess && (
           <div className="p-4 sm:p-5 border-t border-white/10 bg-[#11111c] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
             <button
@@ -379,7 +366,6 @@ export const EmailModal: React.FC<EmailModalProps> = ({
             </button>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              {/* Option 1: Gmail Web Compose (Instant, Reliable, 100% works) */}
               <button
                 type="button"
                 onClick={handleOpenGmail}
@@ -390,7 +376,6 @@ export const EmailModal: React.FC<EmailModalProps> = ({
                 <span>Gmail ile Aç ve Gönder</span>
               </button>
 
-              {/* Option 2: Default System Mail Client (Mailto) */}
               <button
                 type="button"
                 onClick={handleOpenMailto}
@@ -401,7 +386,6 @@ export const EmailModal: React.FC<EmailModalProps> = ({
                 <span>Mail İstemcisi</span>
               </button>
 
-              {/* Option 3: Direct API / SMTP One-click */}
               <button
                 type="button"
                 onClick={handleSendDirectApi}

@@ -27,7 +27,6 @@ export const FlameLogo: React.FC<FlameLogoProps> = ({
       style={{ width, height }}
       data-flame-focal="true"
     >
-      {/* Ambient Radiant Glow */}
       {glow && (
         <div
           className={`absolute inset-0 rounded-full pointer-events-none ${
@@ -45,7 +44,6 @@ export const FlameLogo: React.FC<FlameLogoProps> = ({
         />
       )}
 
-      {/* Official MSEMUN Logo Image */}
       <img
         src="/images/msemun-logo.png"
         alt="MSEMUN Official Logo"

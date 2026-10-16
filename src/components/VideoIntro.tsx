@@ -21,14 +21,13 @@ export const VideoIntro: React.FC<VideoIntroProps> = ({ onComplete }) => {
     }
     setTimeout(() => {
       onComplete();
-    }, 400); // Smooth 400ms fade-out transition
+    }, 400);
   };
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    // Start with sound enabled
     video.muted = false;
     video.volume = 1;
 
@@ -40,7 +39,6 @@ export const VideoIntro: React.FC<VideoIntroProps> = ({ onComplete }) => {
       });
     }
 
-    // Attempt to unmute on first user click anywhere (ignore clicks on button)
     const handleGlobalClick = (e: MouseEvent) => {
       if ((e.target as HTMLElement)?.closest('button')) {
         return;
@@ -68,7 +66,6 @@ export const VideoIntro: React.FC<VideoIntroProps> = ({ onComplete }) => {
         transition: 'opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
       }}
     >
-      {/* Cinematic Background Video with Audio */}
       <video
         ref={videoRef}
         src="/video/Create_a_cinematic_conference.mp4"
@@ -80,7 +77,6 @@ export const VideoIntro: React.FC<VideoIntroProps> = ({ onComplete }) => {
         style={{ width: '100vw', height: '100vh', objectFit: 'cover', pointerEvents: 'none' }}
       />
 
-      {/* Subtle Cinematic Vignette Overlay */}
       <div 
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -89,7 +85,6 @@ export const VideoIntro: React.FC<VideoIntroProps> = ({ onComplete }) => {
         }}
       />
 
-      {/* ── Skip Intro Button (Top-Right Corner, Guaranteed Clickable) ── */}
       <button
         type="button"
         onClick={(e) => {

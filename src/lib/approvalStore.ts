@@ -1,4 +1,3 @@
-// Persistent storage helper for tracking application approval status and email timestamps
 const STORAGE_KEY = 'msemun_approved_applications';
 
 export interface ApprovalRecord {

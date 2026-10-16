@@ -1,9 +1,4 @@
--- ==============================================================================
--- MSEMUN 2026 — Supabase Database Schema
--- Run this entire script in your Supabase Project -> SQL Editor -> New Query -> Run
--- ==============================================================================
 
--- 1. Table: registrations (Delegate Applications)
 CREATE TABLE IF NOT EXISTS public.registrations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
@@ -22,7 +17,6 @@ CREATE TABLE IF NOT EXISTS public.registrations (
     status TEXT DEFAULT 'pending' NOT NULL
 );
 
--- 2. Table: delegations (Delegation Applications)
 CREATE TABLE IF NOT EXISTS public.delegations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
@@ -38,7 +32,6 @@ CREATE TABLE IF NOT EXISTS public.delegations (
     status TEXT DEFAULT 'pending' NOT NULL
 );
 
--- 3. Table: chairboard_apps (Chairboard Applications)
 CREATE TABLE IF NOT EXISTS public.chairboard_apps (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
@@ -64,7 +57,6 @@ CREATE TABLE IF NOT EXISTS public.chairboard_apps (
     status TEXT DEFAULT 'pending' NOT NULL
 );
 
--- 4. Table: admin_apps (Admin Staff Applications)
 CREATE TABLE IF NOT EXISTS public.admin_apps (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
@@ -79,7 +71,6 @@ CREATE TABLE IF NOT EXISTS public.admin_apps (
     status TEXT DEFAULT 'pending' NOT NULL
 );
 
--- 5. Table: press_apps (Press Corps Applications)
 CREATE TABLE IF NOT EXISTS public.press_apps (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
@@ -95,51 +86,38 @@ CREATE TABLE IF NOT EXISTS public.press_apps (
     status TEXT DEFAULT 'pending' NOT NULL
 );
 
--- ==============================================================================
--- Row Level Security (RLS) & Access Policies
--- Allows anonymous visitors on the website to submit applications (INSERT),
--- while protecting submitted data from public reading.
--- ==============================================================================
-
--- Enable RLS on all tables
 ALTER TABLE public.registrations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.delegations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chairboard_apps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admin_apps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.press_apps ENABLE ROW LEVEL SECURITY;
 
--- 1. registrations Policies
 CREATE POLICY "Allow anonymous insert on registrations" 
 ON public.registrations FOR INSERT TO anon, authenticated WITH CHECK (true);
 
 CREATE POLICY "Admin full access on registrations" 
 ON public.registrations FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
--- 2. delegations Policies
 CREATE POLICY "Allow anonymous insert on delegations" 
 ON public.delegations FOR INSERT TO anon, authenticated WITH CHECK (true);
 
 CREATE POLICY "Admin full access on delegations" 
 ON public.delegations FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
--- 3. chairboard_apps Policies
 CREATE POLICY "Allow anonymous insert on chairboard_apps" 
 ON public.chairboard_apps FOR INSERT TO anon, authenticated WITH CHECK (true);
 
 CREATE POLICY "Admin full access on chairboard_apps" 
 ON public.chairboard_apps FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
--- 4. admin_apps Policies
 CREATE POLICY "Allow anonymous insert on admin_apps" 
 ON public.admin_apps FOR INSERT TO anon, authenticated WITH CHECK (true);
 
 CREATE POLICY "Admin full access on admin_apps" 
 ON public.admin_apps FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
--- 5. press_apps Policies
 CREATE POLICY "Allow anonymous insert on press_apps" 
 ON public.press_apps FOR INSERT TO anon, authenticated WITH CHECK (true);
 
 CREATE POLICY "Admin full access on press_apps" 
 ON public.press_apps FOR ALL TO authenticated USING (true) WITH CHECK (true);
-

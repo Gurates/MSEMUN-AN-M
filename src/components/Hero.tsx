@@ -61,14 +61,12 @@ export const Hero: React.FC<HeroProps> = () => {
 
       <div className="relative z-10 section-container flex flex-col items-center text-center">
 
-        {/* Central Torch Emblem */}
         <div
           className="mb-8 relative transition-transform duration-700 hover:scale-105"
         >
           <FlameLogo size="hero" showText={true} glow={true} />
         </div>
 
-        {/* Main Title */}
         <div className="max-w-4xl mx-auto mb-6">
           <p className="text-xs md:text-sm font-semibold tracking-[0.35em] text-amber-500/90 uppercase font-sans mb-3 flex items-center justify-center gap-3">
             <span className="w-8 h-[1px] bg-gradient-to-r from-transparent to-amber-500/60" />
@@ -81,14 +79,12 @@ export const Hero: React.FC<HeroProps> = () => {
           </h1>
         </div>
 
-        {/* Subtitle */}
         <p
           className="max-w-2xl mx-auto text-base sm:text-lg text-slate-300 leading-relaxed font-sans mb-8 font-normal"
         >
           {CONFERENCE_INFO.subheading}
         </p>
 
-        {/* Large AlaçatıMUN-Style Digital Countdown */}
         <div className="countdown-container">
 
           <div className="countdown-block">
