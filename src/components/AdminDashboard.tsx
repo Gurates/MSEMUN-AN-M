@@ -17,31 +17,49 @@ import {
   Phone,
   Building,
   GraduationCap,
-  ArrowLeft
+  ArrowLeft,
+  CheckCircle2,
+  Clock,
+  Sparkles
 } from 'lucide-react';
 import { PageView } from './Navbar';
+import { EmailModal } from './EmailModal';
+import { getApprovedMap, isApplicationApproved } from '../lib/approvalStore';
 
 type TabType = 'all' | 'registrations' | 'delegations' | 'chairboard_apps' | 'admin_apps' | 'press_apps';
+type StatusFilterType = 'all' | 'pending' | 'approved';
 
 interface AdminDashboardProps {
   onNavigate?: (page: PageView) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    try {
-      return sessionStorage.getItem('msemun_admin_session') === 'true';
-    } catch {
-      return false;
-    }
-  });
-
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [authError, setAuthError] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  const [emailModalItem, setEmailModalItem] = useState<any | null>(null);
+
+  // Check existing Supabase session on load
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setIsAuthenticated(true);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Data States for all 5 tables
   const [data, setData] = useState<Record<string, any[]>>({
@@ -59,35 +77,45 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     }
   }, [isAuthenticated]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const correctPassword = import.meta.env.VITE_ADMIN_PASSWORD;
-
-    if (!correctPassword) {
-      setAuthError('Admin password is not set in .env file (VITE_ADMIN_PASSWORD). Please restart Vite dev server after setting it.');
+    if (!emailInput.trim() || !passwordInput.trim()) {
+      setAuthError('Lütfen e-posta ve şifrenizi giriniz.');
       return;
     }
 
-    if (passwordInput === correctPassword) {
-      setIsAuthenticated(true);
-      try {
-        sessionStorage.setItem('msemun_admin_session', 'true');
-      } catch (err) {
-        console.warn(err);
+    setAuthLoading(true);
+    setAuthError('');
+
+    try {
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
+        email: emailInput.trim(),
+        password: passwordInput.trim()
+      });
+
+      if (error) {
+        setAuthError(error.message === 'Invalid login credentials' 
+          ? 'Hatalı e-posta veya şifre girdiniz.' 
+          : `Giriş hatası: ${error.message}`);
+      } else if (authData.session) {
+        setIsAuthenticated(true);
+        setAuthError('');
       }
-      setAuthError('');
-    } else {
-      setAuthError('Incorrect passcode. Please try again.');
+    } catch (err: any) {
+      setAuthError(err.message || 'Giriş sırasında bir hata oluştu.');
+    } finally {
+      setAuthLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
+  const handleLogout = async () => {
     try {
-      sessionStorage.removeItem('msemun_admin_session');
+      await supabase.auth.signOut();
     } catch (err) {
-      console.warn(err);
+      console.warn('Sign out error:', err);
     }
+    setIsAuthenticated(false);
+    setEmailInput('');
     setPasswordInput('');
   };
 
@@ -112,7 +140,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
           console.error(`Error fetching ${tab}:`, error);
           results[tab] = [];
         } else {
-          const sorted = (tableData || []).sort((a: any, b: any) => {
+          const sorted = (tableData || []).map((row: any) => ({
+            ...row,
+            _table: tab
+          })).sort((a: any, b: any) => {
             const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
             const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
             return dateB - dateA;
@@ -129,16 +160,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     }
   };
 
-  // Filtered data for active tab
+  const handleApprovalSuccess = (updatedId: string) => {
+    // Update local data state so badge switches to approved immediately
+    setData(prev => {
+      const next = { ...prev };
+      for (const key of Object.keys(next)) {
+        next[key] = next[key].map(item =>
+          item.id === updatedId ? { ...item, status: 'approved' } : item
+        );
+      }
+      return next;
+    });
+
+    if (selectedItem && selectedItem.id === updatedId) {
+      setSelectedItem((prev: any) => (prev ? { ...prev, status: 'approved' } : null));
+    }
+  };
+
+  // Filtered data for active tab, status and search
   const filteredData = useMemo(() => {
+    const approvedMap = getApprovedMap();
+
     let currentData: any[] = [];
     if (activeTab === 'all') {
       currentData = [
-        ...data.registrations.map(item => ({ ...item, app_type: 'Delegate' })),
-        ...data.delegations.map(item => ({ ...item, app_type: 'Delegation' })),
-        ...data.chairboard_apps.map(item => ({ ...item, app_type: 'Chairboard' })),
-        ...data.admin_apps.map(item => ({ ...item, app_type: 'Admin Staff' })),
-        ...data.press_apps.map(item => ({ ...item, app_type: 'Press Corps' }))
+        ...data.registrations.map(item => ({ ...item, app_type: 'Delegate', _table: 'registrations' })),
+        ...data.delegations.map(item => ({ ...item, app_type: 'Delegation', _table: 'delegations' })),
+        ...data.chairboard_apps.map(item => ({ ...item, app_type: 'Chairboard', _table: 'chairboard_apps' })),
+        ...data.admin_apps.map(item => ({ ...item, app_type: 'Admin Staff', _table: 'admin_apps' })),
+        ...data.press_apps.map(item => ({ ...item, app_type: 'Press Corps', _table: 'press_apps' }))
       ];
       currentData.sort((a: any, b: any) => {
         const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
@@ -155,10 +205,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       };
       currentData = (data[activeTab] || []).map(item => ({
         ...item,
-        app_type: typeMap[activeTab] || 'Applicant'
+        app_type: typeMap[activeTab] || 'Applicant',
+        _table: activeTab
       }));
     }
 
+    // Attach computed approved status
+    currentData = currentData.map(item => ({
+      ...item,
+      isApproved: item.status === 'approved' || !!approvedMap[item.id]
+    }));
+
+    // Filter by approval status
+    if (statusFilter === 'approved') {
+      currentData = currentData.filter(item => item.isApproved);
+    } else if (statusFilter === 'pending') {
+      currentData = currentData.filter(item => !item.isApproved);
+    }
+
+    // Filter by search query
     if (!searchQuery.trim()) return currentData;
 
     const lowerQuery = searchQuery.toLowerCase().trim();
@@ -167,23 +232,58 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       const school = (item.school || '').toLowerCase();
       const delegation = (item.delegation_name || '').toLowerCase();
       const email = (item.email || '').toLowerCase();
-      return name.includes(lowerQuery) || school.includes(lowerQuery) || delegation.includes(lowerQuery) || email.includes(lowerQuery);
+      return (
+        name.includes(lowerQuery) ||
+        school.includes(lowerQuery) ||
+        delegation.includes(lowerQuery) ||
+        email.includes(lowerQuery)
+      );
     });
-  }, [data, activeTab, searchQuery]);
+  }, [data, activeTab, statusFilter, searchQuery]);
+
+  // Overall metrics count
+  const allApplications = useMemo(() => {
+    return [
+      ...data.registrations,
+      ...data.delegations,
+      ...data.chairboard_apps,
+      ...data.admin_apps,
+      ...data.press_apps
+    ];
+  }, [data]);
+
+  const approvedCount = useMemo(() => {
+    const approvedMap = getApprovedMap();
+    return allApplications.filter(i => i.status === 'approved' || !!approvedMap[i.id]).length;
+  }, [allApplications]);
 
   // CSV Export
   const exportToCSV = () => {
     if (filteredData.length === 0) return;
 
-    const headers = Object.keys(filteredData[0]);
+    const exportItems = filteredData.map(item => {
+      const { _table, isApproved, ...rest } = item;
+      return {
+        ...rest,
+        status: isApproved ? 'approved' : 'pending'
+      };
+    });
+
+    // Sanitize CSV value against formula injection (=, +, -, @)
+    const sanitizeForCSV = (val: any): string => {
+      if (val === null || val === undefined) return '""';
+      let str = String(val);
+      if (/^[=+\-@\t\r]/.test(str)) {
+        str = `'${str}`;
+      }
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+
+    const headers = Object.keys(exportItems[0]);
     const csvContent = [
       headers.join(','),
-      ...filteredData.map(item =>
-        headers.map(header => {
-          let val = item[header];
-          if (val === null || val === undefined) val = '';
-          return `"${String(val).replace(/"/g, '""')}"`;
-        }).join(',')
+      ...exportItems.map(item =>
+        headers.map(header => sanitizeForCSV((item as any)[header])).join(',')
       )
     ].join('\n');
 
@@ -198,77 +298,125 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   };
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return '—';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB', {
-      day: '2-digit', month: 'short', year: 'numeric',
-      hour: '2-digit', minute: '2-digit'
+    return date.toLocaleDateString('tr-TR', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
   const getBadgeStyle = (type: string) => {
     switch (type) {
-      case 'Delegate': return 'bg-[#00b4d8]/20 text-[#00b4d8] border-[#00b4d8]/40';
-      case 'Delegation': return 'bg-purple-500/20 text-purple-300 border-purple-500/40';
-      case 'Chairboard': return 'bg-amber-500/20 text-amber-400 border-amber-500/40';
-      case 'Admin Staff': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
-      case 'Press Corps': return 'bg-rose-500/20 text-rose-400 border-rose-500/40';
-      default: return 'bg-slate-500/20 text-slate-300 border-slate-500/40';
+      case 'Delegate':
+        return 'bg-[#00b4d8]/20 text-[#00b4d8] border-[#00b4d8]/40';
+      case 'Delegation':
+        return 'bg-purple-500/20 text-purple-300 border-purple-500/40';
+      case 'Chairboard':
+        return 'bg-amber-500/20 text-amber-400 border-amber-500/40';
+      case 'Admin Staff':
+        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
+      case 'Press Corps':
+        return 'bg-rose-500/20 text-rose-400 border-rose-500/40';
+      default:
+        return 'bg-slate-500/20 text-slate-300 border-slate-500/40';
     }
   };
 
   const tabs = [
-    { id: 'all' as TabType, label: 'All Applications', icon: LayoutGrid },
-    { id: 'registrations' as TabType, label: 'Delegates', icon: Users },
-    { id: 'delegations' as TabType, label: 'Delegations', icon: Briefcase },
+    { id: 'all' as TabType, label: 'Tüm Başvurular', icon: LayoutGrid },
+    { id: 'registrations' as TabType, label: 'Delegeler', icon: Users },
+    { id: 'delegations' as TabType, label: 'Delegasyonlar', icon: Briefcase },
     { id: 'chairboard_apps' as TabType, label: 'Chairboard', icon: Award },
-    { id: 'admin_apps' as TabType, label: 'Admin Staff', icon: CheckCircle },
-    { id: 'press_apps' as TabType, label: 'Press Corps', icon: FileText }
+    { id: 'admin_apps' as TabType, label: 'Admin Ekibi', icon: CheckCircle },
+    { id: 'press_apps' as TabType, label: 'Basın / Press', icon: FileText }
   ];
 
-  // ═══ AUTH LOGIN SCREEN ═══
+  // ═══════════════════════════════════════════════════════════════
+  // 1. AUTH / LOGIN SCREEN (Supabase Auth - Secure & Encrypted)
+  // ═══════════════════════════════════════════════════════════════
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen pt-28 sm:pt-36 pb-16 flex items-center justify-center px-4 bg-[#060608] cinematic-grid">
-        <div className="w-full max-w-md p-8 rounded-2xl bg-[#0c0c14]/95 border border-white/12 shadow-2xl backdrop-blur-xl">
+        <div className="w-full max-w-md p-8 rounded-2xl bg-[#0c0c14]/95 border border-amber-500/30 shadow-2xl shadow-amber-500/10 backdrop-blur-xl">
           <div className="flex flex-col items-center text-center mb-6">
-            <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-3">
-              <Lock size={24} />
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/40 flex items-center justify-center text-amber-400 mb-3 shadow-lg shadow-amber-500/20">
+              <Lock size={26} />
             </div>
-            <h1 className="text-2xl font-bold text-white font-serif">MSEMUN Secretariat</h1>
-            <p className="text-xs text-slate-400 mt-1">Enter your admin passcode to access registration applications.</p>
+            <h1 className="text-2xl font-bold text-white font-serif">MSEMUN Sekretaryası</h1>
+            <p className="text-xs text-slate-400 mt-1 max-w-xs">
+              Yetkili yönetim portalı. Başvuruları görüntülemek ve onay maillerini yönetmek için yönetici hesabınızla giriş yapınız.
+            </p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-xs text-slate-300 mb-1.5 font-medium">Passcode</label>
+              <label className="block text-xs text-slate-300 mb-1.5 font-medium">
+                Yönetici E-posta Adresi
+              </label>
+              <input
+                type="email"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="admin@msemun.org"
+                autoFocus
+                required
+                className="w-full px-4 py-3 rounded-xl bg-black/60 border border-white/15 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-colors"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs text-slate-300 mb-1.5 font-medium flex items-center justify-between">
+                <span>Yönetici Şifresi</span>
+                <span className="text-[10px] text-amber-400/80 font-mono">Supabase Auth</span>
+              </label>
               <input
                 type="password"
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                placeholder="Enter admin passcode"
-                autoFocus
-                className="w-full px-4 py-2.5 rounded-lg bg-black/50 border border-white/15 text-sm text-white focus:outline-none focus:border-amber-400"
+                placeholder="••••••••••••"
+                required
+                className="w-full px-4 py-3 rounded-xl bg-black/60 border border-white/15 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-colors"
               />
             </div>
 
             {authError && (
-              <p className="text-xs text-red-400 font-medium">{authError}</p>
+              <div className="p-3 rounded-lg bg-red-500/15 border border-red-500/30 text-xs text-red-300 font-medium leading-relaxed">
+                {authError}
+              </div>
             )}
 
             <button
               type="submit"
-              className="btn-primary w-full text-sm !py-3 font-semibold cursor-pointer"
+              disabled={authLoading}
+              className="btn-primary w-full text-sm !py-3 font-semibold cursor-pointer shadow-lg shadow-amber-500/20 disabled:opacity-50"
             >
-              Sign In to Dashboard
+              {authLoading ? 'Doğrulanıyor...' : 'Yönetici Paneline Giriş Yap'}
             </button>
+
+            {onNavigate && (
+              <div className="text-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => onNavigate('home')}
+                  className="text-xs text-slate-400 hover:text-amber-400 transition-colors cursor-pointer"
+                >
+                  ← Web Sitesine Geri Dön
+                </button>
+              </div>
+            )}
           </form>
         </div>
       </div>
     );
   }
 
-  // ═══ MAIN DASHBOARD VIEW ═══
+  // ═══════════════════════════════════════════════════════════════
+  // 2. MAIN DASHBOARD VIEW
+  // ═══════════════════════════════════════════════════════════════
   return (
     <div className="min-h-screen pt-24 sm:pt-28 pb-16 px-4 sm:px-6 md:px-8 bg-[#060608] cinematic-grid">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -277,12 +425,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-white/10">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-amber-400/20 text-amber-300 border border-amber-400/30">
-                Secretariat Portal
+              <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                Sekretarya Yönetim Paneli
               </span>
               <span className="text-xs text-slate-400 font-mono">MSEMUN '26</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white font-serif tracking-tight">Applications Management</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white font-serif tracking-tight">
+              Gelen Başvurular & Onay Yönetimi
+            </h1>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
@@ -292,7 +442,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-slate-300 transition-colors cursor-pointer"
               >
                 <ArrowLeft size={14} />
-                <span>Return to Website</span>
+                <span>Web Sitesine Dön</span>
               </button>
             )}
 
@@ -302,7 +452,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-slate-300 transition-colors cursor-pointer"
             >
               <RefreshCw size={14} className={loading ? 'animate-spin text-amber-400' : ''} />
-              <span>Refresh</span>
+              <span>Yenile</span>
             </button>
 
             <button
@@ -310,17 +460,66 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-xs text-red-400 transition-colors cursor-pointer"
             >
               <LogOut size={14} />
-              <span>Logout</span>
+              <span>Çıkış Yap</span>
             </button>
           </div>
         </div>
 
-        {/* Metrics Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {/* Status Highlights & Metrics */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="p-4 rounded-xl bg-[#0c0c14]/90 border border-white/10 flex items-center justify-between">
+            <div>
+              <div className="text-[11px] font-mono uppercase text-slate-400">Toplam Başvuru</div>
+              <div className="text-2xl font-bold text-white font-mono mt-0.5">{allApplications.length}</div>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-300">
+              <FileText size={20} />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-[#0c0c14]/90 border border-emerald-500/30 flex items-center justify-between shadow-lg shadow-emerald-500/5">
+            <div>
+              <div className="text-[11px] font-mono uppercase text-emerald-400 font-semibold">Onaylananlar</div>
+              <div className="text-2xl font-bold text-emerald-300 font-mono mt-0.5">{approvedCount}</div>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+              <CheckCircle2 size={20} />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-[#0c0c14]/90 border border-amber-500/30 flex items-center justify-between shadow-lg shadow-amber-500/5">
+            <div>
+              <div className="text-[11px] font-mono uppercase text-amber-400 font-semibold">Beklemede</div>
+              <div className="text-2xl font-bold text-amber-300 font-mono mt-0.5">
+                {Math.max(0, allApplications.length - approvedCount)}
+              </div>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <Clock size={20} />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-[#0c0c14]/90 border border-white/10 flex items-center justify-between">
+            <div>
+              <div className="text-[11px] font-mono uppercase text-slate-400">Onay Oranı</div>
+              <div className="text-2xl font-bold text-white font-mono mt-0.5">
+                {allApplications.length > 0
+                  ? `${Math.round((approvedCount / allApplications.length) * 100)}%`
+                  : '0%'}
+              </div>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <Sparkles size={20} />
+            </div>
+          </div>
+        </div>
+
+        {/* Category Tabs */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const count = tab.id === 'all'
-              ? Object.values(data).reduce((acc, curr) => acc + curr.length, 0)
+              ? allApplications.length
               : data[tab.id]?.length || 0;
             const isActive = activeTab === tab.id;
 
@@ -331,14 +530,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                   setActiveTab(tab.id);
                   setSearchQuery('');
                 }}
-                className={`p-3.5 sm:p-4 rounded-xl border transition-all cursor-pointer select-none ${isActive
+                className={`p-3 sm:p-3.5 rounded-xl border transition-all cursor-pointer select-none ${
+                  isActive
                     ? 'bg-[#131320] border-amber-400/60 shadow-lg shadow-amber-500/10 scale-[1.02]'
                     : 'bg-[#0c0c14]/80 border-white/10 hover:border-white/20 hover:bg-white/5'
-                  }`}
+                }`}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <Icon size={18} className={isActive ? 'text-amber-400' : 'text-slate-400'} />
-                  <span className={`text-sm font-mono font-bold ${isActive ? 'text-amber-300' : 'text-slate-300'}`}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <Icon size={16} className={isActive ? 'text-amber-400' : 'text-slate-400'} />
+                  <span className={`text-xs font-mono font-bold ${isActive ? 'text-amber-300' : 'text-slate-300'}`}>
                     {count}
                   </span>
                 </div>
@@ -350,89 +550,189 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
           })}
         </div>
 
-        {/* Actions Bar (Search + Export) */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#0c0c14]/90 p-3.5 rounded-xl border border-white/10">
-          <div className="relative w-full sm:w-80">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search by name, school, delegation..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
-            />
+        {/* Filter & Search Bar */}
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-[#0c0c14]/90 p-3.5 rounded-xl border border-white/10">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-1">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-md">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="İsim, okul, e-posta veya delegasyon adı ile ara..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 rounded-lg bg-black/50 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+              />
+            </div>
+
+            {/* Status Filter Buttons */}
+            <div className="flex items-center gap-1 p-1 rounded-lg bg-black/40 border border-white/10 shrink-0">
+              <button
+                type="button"
+                onClick={() => setStatusFilter('all')}
+                className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+                  statusFilter === 'all'
+                    ? 'bg-white/15 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Tümü
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('pending')}
+                className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+                  statusFilter === 'pending'
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Beklemede
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('approved')}
+                className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+                  statusFilter === 'approved'
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Onaylananlar
+              </button>
+            </div>
           </div>
 
           <button
             onClick={exportToCSV}
             disabled={filteredData.length === 0}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-xs text-white transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-xs text-white transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
             <Download size={14} />
-            <span>Export to CSV ({filteredData.length})</span>
+            <span>CSV Dışa Aktar ({filteredData.length})</span>
           </button>
         </div>
 
         {/* Applications Table */}
         <div className="rounded-xl bg-[#0c0c14]/90 border border-white/10 overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse min-w-[760px]">
+            <table className="w-full text-left text-xs border-collapse min-w-[850px]">
               <thead className="bg-black/60 border-b border-white/10 text-slate-400 font-mono uppercase text-[11px]">
                 <tr>
-                  <th className="px-4 py-3.5 font-semibold w-28">Role</th>
-                  <th className="px-4 py-3.5 font-semibold w-48">Applicant Name</th>
-                  <th className="px-4 py-3.5 font-semibold w-44">School</th>
-                  <th className="px-4 py-3.5 font-semibold w-48">Contact Email</th>
-                  <th className="px-4 py-3.5 font-semibold w-36">Phone</th>
-                  <th className="px-4 py-3.5 font-semibold text-right w-36">Submission Date</th>
+                  <th className="px-4 py-3.5 font-semibold w-28">Kategori</th>
+                  <th className="px-4 py-3.5 font-semibold w-52">Katılımcı / Delegasyon</th>
+                  <th className="px-4 py-3.5 font-semibold w-40">Okul / Kurum</th>
+                  <th className="px-4 py-3.5 font-semibold w-44">İletişim E-posta</th>
+                  <th className="px-4 py-3.5 font-semibold text-center w-36">Onay Durumu</th>
+                  <th className="px-4 py-3.5 font-semibold text-right w-32">Başvuru Tarihi</th>
+                  <th className="px-4 py-3.5 font-semibold text-center w-36">Hızlı İşlem</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 text-slate-300">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-16 text-center text-slate-400 font-mono">
+                    <td colSpan={7} className="px-4 py-16 text-center text-slate-400 font-mono">
                       <div className="inline-flex items-center gap-2">
                         <RefreshCw size={16} className="animate-spin text-amber-400" />
-                        <span>Loading applications from Supabase...</span>
+                        <span>Supabase üzerinden başvurular yükleniyor...</span>
                       </div>
                     </td>
                   </tr>
                 ) : filteredData.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-16 text-center text-slate-400">
-                      {searchQuery ? 'No applications match your search query.' : 'No applications received in this category yet.'}
+                    <td colSpan={7} className="px-4 py-16 text-center text-slate-400">
+                      {searchQuery
+                        ? 'Arama kriterlerinize uyan başvuru bulunamadı.'
+                        : 'Bu kategoride henüz başvuru bulunmamaktadır.'}
                     </td>
                   </tr>
                 ) : (
-                  filteredData.map((item: any) => (
-                    <tr
-                      key={item.id}
-                      onClick={() => setSelectedItem(item)}
-                      className="hover:bg-white/5 transition-colors cursor-pointer group"
-                    >
-                      <td className="px-4 py-3">
-                        <span className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold border ${getBadgeStyle(item.app_type)}`}>
-                          {item.app_type}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 font-medium text-white group-hover:text-amber-300 transition-colors">
-                        {item.delegation_name ? (
-                          <div>
-                            <div className="font-semibold">{item.delegation_name}</div>
-                            <div className="text-[11px] text-slate-400 font-normal">{item.full_name} (Head Delegate)</div>
+                  filteredData.map((item: any) => {
+                    const approved = item.isApproved;
+
+                    return (
+                      <tr
+                        key={item.id}
+                        onClick={() => setSelectedItem(item)}
+                        className="hover:bg-white/5 transition-colors cursor-pointer group"
+                      >
+                        {/* Kategori */}
+                        <td className="px-4 py-3">
+                          <span className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold border ${getBadgeStyle(item.app_type)}`}>
+                            {item.app_type}
+                          </span>
+                        </td>
+
+                        {/* Katılımcı Adı */}
+                        <td className="px-4 py-3 font-medium text-white group-hover:text-amber-300 transition-colors">
+                          {item.delegation_name ? (
+                            <div>
+                              <div className="font-semibold text-white">{item.delegation_name}</div>
+                              <div className="text-[11px] text-slate-400 font-normal">
+                                {item.full_name} (Baş Delege)
+                              </div>
+                            </div>
+                          ) : (
+                            <div>
+                              <div className="font-semibold">{item.full_name}</div>
+                              {item.grade && (
+                                <div className="text-[10px] text-slate-400 font-normal">{item.grade}</div>
+                              )}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Okul */}
+                        <td className="px-4 py-3 text-slate-300 truncate max-w-[180px]">
+                          {item.school || '—'}
+                        </td>
+
+                        {/* E-posta */}
+                        <td className="px-4 py-3 text-slate-300 font-mono text-[11px] truncate max-w-[200px]">
+                          {item.email}
+                        </td>
+
+                        {/* Durum Rozeti */}
+                        <td className="px-4 py-3 text-center">
+                          {approved ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                              <CheckCircle2 size={11} />
+                              <span>Onaylandı</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                              <Clock size={11} />
+                              <span>Beklemede</span>
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Tarih */}
+                        <td className="px-4 py-3 text-right font-mono text-slate-400 text-[11px]">
+                          {formatDate(item.created_at)}
+                        </td>
+
+                        {/* Hızlı İşlem: Onay Maili Gönder / Formu İncele */}
+                        <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setEmailModalItem(item)}
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
+                                approved
+                                  ? 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
+                                  : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 shadow-sm'
+                              }`}
+                              title={approved ? 'Onay mailini tekrar gönder veya görüntüle' : 'Bu başvuru için onay maili hazırla ve gönder'}
+                            >
+                              <Mail size={12} className={approved ? 'text-slate-400' : 'text-amber-400'} />
+                              <span>{approved ? 'Tekrar İlet' : 'Onay Maili'}</span>
+                            </button>
                           </div>
-                        ) : (
-                          item.full_name
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-slate-300 truncate max-w-[180px]">{item.school}</td>
-                      <td className="px-4 py-3 text-slate-300 font-mono text-[11px] truncate max-w-[200px]">{item.email}</td>
-                      <td className="px-4 py-3 text-slate-300 font-mono text-[11px]">{item.phone || '—'}</td>
-                      <td className="px-4 py-3 text-right font-mono text-slate-400 text-[11px]">
-                        {formatDate(item.created_at)}
-                      </td>
-                    </tr>
-                  ))
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -441,40 +741,70 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
 
       </div>
 
-      {/* ═══ APPLICATION DETAIL MODAL (FIXED HEADER & RESPONSIVE TEXT BREAKING) ═══ */}
+      {/* ═══════════════════════════════════════════════════════════════
+          3. APPLICATION DETAIL MODAL
+          ═══════════════════════════════════════════════════════════════ */}
       {selectedItem && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md overflow-hidden"
           onClick={() => setSelectedItem(null)}
         >
           <div
-            className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl bg-[#0c0c14] border border-white/20 shadow-2xl overflow-hidden"
+            className="relative w-full max-w-3xl max-h-[92vh] flex flex-col rounded-2xl bg-[#0c0c14] border border-white/20 shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Sticky Fixed Modal Header */}
+            {/* Modal Header */}
             <div className="flex items-start justify-between p-5 sm:p-6 border-b border-white/10 bg-[#0f0f1c] shrink-0">
-              <div>
-                <span className={`inline-block px-2.5 py-0.5 rounded text-xs font-semibold border mb-2 ${getBadgeStyle(selectedItem.app_type)}`}>
-                  {selectedItem.app_type}
-                </span>
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`inline-block px-2.5 py-0.5 rounded text-xs font-semibold border ${getBadgeStyle(selectedItem.app_type)}`}>
+                    {selectedItem.app_type}
+                  </span>
+                  {selectedItem.isApproved || isApplicationApproved(selectedItem.id, selectedItem.status) ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                      <CheckCircle2 size={12} />
+                      <span>Onaylandı (Mail Gönderildi)</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                      <Clock size={12} />
+                      <span>Onay Bekliyor</span>
+                    </span>
+                  )}
+                </div>
+
                 <h2 className="text-xl sm:text-2xl font-bold text-white font-serif break-words">
                   {selectedItem.delegation_name || selectedItem.full_name}
                 </h2>
-                <p className="text-xs text-slate-400 font-mono mt-1">
-                  Submitted on {formatDate(selectedItem.created_at)}
+                <p className="text-xs text-slate-400 font-mono">
+                  Başvuru Tarihi: {formatDate(selectedItem.created_at)}
                 </p>
               </div>
 
-              <button
-                onClick={() => setSelectedItem(null)}
-                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer shrink-0 ml-4"
-                title="Close"
-              >
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const current = selectedItem;
+                    setEmailModalItem(current);
+                  }}
+                  className="btn-primary !px-3.5 !py-2 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-md"
+                >
+                  <Mail size={14} />
+                  <span>Onay Maili Gönder</span>
+                </button>
+
+                <button
+                  onClick={() => setSelectedItem(null)}
+                  className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer shrink-0"
+                  title="Pencereyi Kapat"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
-            {/* Scrollable Modal Body with Guaranteed Text Wrapping */}
+            {/* Scrollable Modal Content */}
             <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-5 text-xs text-slate-300">
 
               {/* Quick Info Grid */}
@@ -482,8 +812,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Mail size={16} className="text-amber-400 shrink-0" />
                   <div className="min-w-0">
-                    <div className="text-[10px] uppercase font-mono text-slate-500">Email</div>
-                    <a href={`mailto:${selectedItem.email}`} className="text-slate-200 hover:text-amber-400 hover:underline break-all block">
+                    <div className="text-[10px] uppercase font-mono text-slate-500">E-posta</div>
+                    <a href={`mailto:${selectedItem.email}`} className="text-slate-200 hover:text-amber-400 hover:underline break-all block font-mono">
                       {selectedItem.email}
                     </a>
                   </div>
@@ -492,8 +822,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Phone size={16} className="text-amber-400 shrink-0" />
                   <div className="min-w-0">
-                    <div className="text-[10px] uppercase font-mono text-slate-500">Phone</div>
-                    <a href={`tel:${selectedItem.phone}`} className="text-slate-200 hover:text-amber-400 hover:underline block">
+                    <div className="text-[10px] uppercase font-mono text-slate-500">Telefon Numarası</div>
+                    <a href={`tel:${selectedItem.phone}`} className="text-slate-200 hover:text-amber-400 hover:underline block font-mono">
                       {selectedItem.phone || '—'}
                     </a>
                   </div>
@@ -502,8 +832,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Building size={16} className="text-amber-400 shrink-0" />
                   <div className="min-w-0">
-                    <div className="text-[10px] uppercase font-mono text-slate-500">School / Institution</div>
-                    <div className="text-white font-medium break-words">{selectedItem.school}</div>
+                    <div className="text-[10px] uppercase font-mono text-slate-500">Okul / Kurum</div>
+                    <div className="text-white font-medium break-words">{selectedItem.school || '—'}</div>
                   </div>
                 </div>
 
@@ -511,7 +841,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                   <div className="flex items-center gap-2.5 min-w-0">
                     <GraduationCap size={16} className="text-amber-400 shrink-0" />
                     <div className="min-w-0">
-                      <div className="text-[10px] uppercase font-mono text-slate-500">Grade</div>
+                      <div className="text-[10px] uppercase font-mono text-slate-500">Sınıf / Seviye</div>
                       <div className="text-white font-medium">{selectedItem.grade}</div>
                     </div>
                   </div>
@@ -521,53 +851,61 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
               {/* Committee Preferences */}
               {(selectedItem.committee_preference_1 || selectedItem.pref1) && (
                 <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2.5">
-                  <h3 className="text-xs uppercase font-mono font-bold text-amber-400">Committee Preferences</h3>
+                  <h3 className="text-xs uppercase font-mono font-bold text-amber-400">
+                    Komite Tercihleri
+                  </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                     <div className="p-2.5 rounded-lg bg-white/5 border border-white/10">
-                      <span className="text-[10px] text-slate-400 font-mono block mb-0.5">1st Choice</span>
-                      <span className="font-semibold text-white uppercase break-words">{selectedItem.committee_preference_1 || selectedItem.pref1}</span>
+                      <span className="text-[10px] text-slate-400 font-mono block mb-0.5">1. Tercih</span>
+                      <span className="font-semibold text-white uppercase break-words">
+                        {selectedItem.committee_preference_1 || selectedItem.pref1}
+                      </span>
                     </div>
                     <div className="p-2.5 rounded-lg bg-white/5 border border-white/10">
-                      <span className="text-[10px] text-slate-400 font-mono block mb-0.5">2nd Choice</span>
-                      <span className="font-semibold text-white uppercase break-words">{selectedItem.committee_preference_2 || selectedItem.pref2 || '—'}</span>
+                      <span className="text-[10px] text-slate-400 font-mono block mb-0.5">2. Tercih</span>
+                      <span className="font-semibold text-white uppercase break-words">
+                        {selectedItem.committee_preference_2 || selectedItem.pref2 || '—'}
+                      </span>
                     </div>
                     <div className="p-2.5 rounded-lg bg-white/5 border border-white/10">
-                      <span className="text-[10px] text-slate-400 font-mono block mb-0.5">3rd Choice</span>
-                      <span className="font-semibold text-white uppercase break-words">{selectedItem.committee_preference_3 || selectedItem.pref3 || '—'}</span>
+                      <span className="text-[10px] text-slate-400 font-mono block mb-0.5">3. Tercih</span>
+                      <span className="font-semibold text-white uppercase break-words">
+                        {selectedItem.committee_preference_3 || selectedItem.pref3 || '—'}
+                      </span>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Detailed Dynamic Answers with Overflow Fix */}
+              {/* Detailed Form Fields */}
               {Object.entries(selectedItem).map(([key, value]) => {
                 if ([
                   'id', 'created_at', 'full_name', 'email', 'phone', 'school', 'grade',
-                  'app_type', 'committee_preference_1', 'committee_preference_2',
+                  'app_type', '_table', 'isApproved', 'committee_preference_1', 'committee_preference_2',
                   'committee_preference_3', 'pref1', 'pref2', 'pref3'
                 ].includes(key)) return null;
 
                 if (!value || value === '') return null;
 
                 const customTitles: Record<string, string> = {
-                  exp_list: 'MUN Experience',
-                  org_exp_list: 'Organization / Publication Experience',
-                  motivation_letter: 'Motivation Letter',
-                  q_ai_suspicion: 'Q: Delegate AI Suspicion Handling',
-                  q_final_documents: 'Q: Final Documents Details',
-                  q_directive_help: 'Q: Directive Writing Assistance (Crisis)',
-                  q_resolution_paper: 'Q: Resolution Paper Time Management (GA)',
-                  q_disagreement: 'Q: Chairboard Procedural Disagreement',
-                  crisis_directive: 'Sample Crisis Directive',
-                  ga_procedure: 'GA Procedure Walkthrough',
-                  camera_model: 'Camera Equipment / Model',
-                  expected_members: 'Expected Member Count',
-                  all_emails: 'All Delegation Member Emails',
-                  all_phones: 'All Delegation Member Phone Numbers',
-                  references: 'References',
-                  references_text: 'References',
-                  message: 'Additional Message',
-                  status: 'Application Status'
+                  exp_list: 'MUN Geçmişi ve Deneyimleri',
+                  org_exp_list: 'Organizasyon & Görev Deneyimi',
+                  motivation_letter: 'Motivasyon Mektubu',
+                  q_ai_suspicion: 'Soru: Delege Yapay Zeka Şüphesi Yönetimi',
+                  q_final_documents: 'Soru: Nihai Karar Metinleri Denetimi',
+                  q_directive_help: 'Soru: Kriz Direktif Yazım Yardımı',
+                  q_resolution_paper: 'Soru: Genel Kurul Karar Taslağı Zaman Yönetimi',
+                  q_disagreement: 'Soru: Divan İçi Usul Anlaşmazlığı Çözümü',
+                  crisis_directive: 'Örnek Kriz Direktifi',
+                  ga_procedure: 'Genel Kurul Usul Anlatımı',
+                  camera_model: 'Kamera / Fotoğraf Ekipman Modeli',
+                  expected_members: 'Beklenen Delegasyon Üye Sayısı',
+                  all_emails: 'Delegasyon Üyeleri E-posta Listesi',
+                  all_phones: 'Delegasyon Üyeleri Telefon Listesi',
+                  references: 'Referanslar',
+                  references_text: 'Referanslar',
+                  message: 'Ek Not / Mesaj',
+                  status: 'Başvuru Durumu'
                 };
 
                 const title = customTitles[key] || key.replace(/_/g, ' ').toUpperCase();
@@ -585,17 +923,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-white/10 bg-[#0f0f1c] flex items-center justify-end">
+            <div className="p-4 sm:p-5 border-t border-white/10 bg-[#0f0f1c] flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setEmailModalItem(selectedItem)}
+                className="btn-primary !px-4 !py-2 text-xs font-semibold inline-flex items-center gap-2 cursor-pointer shadow-md"
+              >
+                <Mail size={14} />
+                <span>Onay Maili Gönder ({selectedItem.full_name || selectedItem.delegation_name})</span>
+              </button>
+
               <button
                 onClick={() => setSelectedItem(null)}
                 className="px-5 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-xs text-white transition-colors cursor-pointer"
               >
-                Close Window
+                Pencereyi Kapat
               </button>
             </div>
 
           </div>
         </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════
+          4. APPROVAL EMAIL MODAL
+          ═══════════════════════════════════════════════════════════════ */}
+      {emailModalItem && (
+        <EmailModal
+          item={emailModalItem}
+          tableName={emailModalItem._table}
+          onClose={() => setEmailModalItem(null)}
+          onSuccess={handleApprovalSuccess}
+        />
       )}
 
     </div>

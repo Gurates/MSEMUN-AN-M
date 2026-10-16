@@ -77,11 +77,20 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <div>
             © {new Date().getFullYear()} MSEMUN Model United Nations Conference. {CONFERENCE_INFO.dates} • Istanbul.
           </div>
-          <div className="flex items-center gap-2 text-slate-400">
+          <div className="flex items-center gap-2.5 text-slate-400">
             <span>Secretariat:</span>
             <a href="mailto:secretariat@msemun.org" className="text-amber-400 hover:underline">
               secretariat@msemun.org
             </a>
+            <span className="text-slate-600">•</span>
+            <button
+              onClick={() => onNavigate('admin')}
+              className="text-slate-500 hover:text-amber-400 transition-colors inline-flex items-center gap-1 cursor-pointer"
+              title="Secretariat Admin Portal (/admin)"
+              style={{ background: 'none', border: 'none', outline: 'none' }}
+            >
+              <span>Portal</span>
+            </button>
           </div>
         </div>
 

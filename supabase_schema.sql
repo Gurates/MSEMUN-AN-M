@@ -112,48 +112,34 @@ ALTER TABLE public.press_apps ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow anonymous insert on registrations" 
 ON public.registrations FOR INSERT TO anon, authenticated WITH CHECK (true);
 
-CREATE POLICY "Allow authenticated read on registrations" 
-ON public.registrations FOR SELECT TO authenticated USING (true);
-
-CREATE POLICY "Allow authenticated update on registrations" 
-ON public.registrations FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Admin full access on registrations" 
+ON public.registrations FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- 2. delegations Policies
 CREATE POLICY "Allow anonymous insert on delegations" 
 ON public.delegations FOR INSERT TO anon, authenticated WITH CHECK (true);
 
-CREATE POLICY "Allow authenticated read on delegations" 
-ON public.delegations FOR SELECT TO authenticated USING (true);
-
-CREATE POLICY "Allow authenticated update on delegations" 
-ON public.delegations FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Admin full access on delegations" 
+ON public.delegations FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- 3. chairboard_apps Policies
 CREATE POLICY "Allow anonymous insert on chairboard_apps" 
 ON public.chairboard_apps FOR INSERT TO anon, authenticated WITH CHECK (true);
 
-CREATE POLICY "Allow authenticated read on chairboard_apps" 
-ON public.chairboard_apps FOR SELECT TO authenticated USING (true);
-
-CREATE POLICY "Allow authenticated update on chairboard_apps" 
-ON public.chairboard_apps FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Admin full access on chairboard_apps" 
+ON public.chairboard_apps FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- 4. admin_apps Policies
 CREATE POLICY "Allow anonymous insert on admin_apps" 
 ON public.admin_apps FOR INSERT TO anon, authenticated WITH CHECK (true);
 
-CREATE POLICY "Allow authenticated read on admin_apps" 
-ON public.admin_apps FOR SELECT TO authenticated USING (true);
-
-CREATE POLICY "Allow authenticated update on admin_apps" 
-ON public.admin_apps FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Admin full access on admin_apps" 
+ON public.admin_apps FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- 5. press_apps Policies
 CREATE POLICY "Allow anonymous insert on press_apps" 
 ON public.press_apps FOR INSERT TO anon, authenticated WITH CHECK (true);
 
-CREATE POLICY "Allow authenticated read on press_apps" 
-ON public.press_apps FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Admin full access on press_apps" 
+ON public.press_apps FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
-CREATE POLICY "Allow authenticated update on press_apps" 
-ON public.press_apps FOR UPDATE TO authenticated USING (true);

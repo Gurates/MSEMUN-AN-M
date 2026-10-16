@@ -72,6 +72,8 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
   const [activeRole, setActiveRole] = useState<ApplicationType>('hub');
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [honeypot, setHoneypot] = useState<string>('');
+  const [lastSubmitTime, setLastSubmitTime] = useState<number>(0);
 
   // ── Delegate Form State ──
   const [delegateForm, setDelegateForm] = useState({
@@ -160,13 +162,28 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
     }));
   };
 
-  // ── Generic Submitter with Supabase Error Validation (Identical to AlaçatıMUN) ──
+  // ── Generic Submitter with Anti-Bot Honeypot & Submission Throttling ──
   const handleGenericSubmit = async (
     e: React.FormEvent, 
     validator: () => boolean,
     insertFn: () => PromiseLike<any>
   ) => {
     e.preventDefault();
+
+    // 1. Bot Detection: If hidden honeypot field is filled, silently fake success
+    if (honeypot.trim().length > 0) {
+      console.warn('Bot submission trapped via honeypot.');
+      setIsSuccess(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // 2. Submission Throttling: Prevent rapid double/spam submissions
+    const now = Date.now();
+    if (now - lastSubmitTime < 3000) {
+      return;
+    }
+    setLastSubmitTime(now);
 
     if (validator()) {
       setIsSubmitting(true);
@@ -393,6 +410,20 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
               <span className="font-mono text-xs text-slate-400 uppercase">
                 ALAÇATIMUN '26 // {activeRole.toUpperCase()}
               </span>
+            </div>
+
+            {/* Anti-Bot Honeypot Field (Invisible to real users, traps automated bot submission) */}
+            <div className="hidden" aria-hidden="true" style={{ display: 'none' }}>
+              <label htmlFor="hp_company_field">Do not fill this field</label>
+              <input
+                id="hp_company_field"
+                type="text"
+                name="company_title_verification"
+                tabIndex={-1}
+                autoComplete="off"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+              />
             </div>
 
             {/* ═══ 1. DELEGATE FORM ═══ */}

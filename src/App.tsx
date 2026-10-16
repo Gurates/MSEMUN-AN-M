@@ -46,7 +46,11 @@ export const App: React.FC = () => {
     };
 
     window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handlePopState);
+    };
   }, []);
 
   const handleIntroComplete = () => {
@@ -74,17 +78,19 @@ export const App: React.FC = () => {
     setSelectedCommitteeForApply(committeeId);
   };
 
+  const isIntroActive = showIntro && currentPage !== 'admin';
+
   return (
     <div className="min-h-screen bg-[#060608] text-[#f8fafc] flex flex-col">
       {/* Cinematic Fullscreen Video Intro (skipped if /admin or already played) */}
-      {showIntro && (
+      {isIntroActive && (
         <VideoIntro onComplete={handleIntroComplete} />
       )}
 
       {/* Main Website Container */}
       <div 
         className={`flex flex-col flex-grow transition-opacity duration-1000 ${
-          showIntro ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
+          isIntroActive ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
         }`}
         style={{
           transition: 'opacity 1s cubic-bezier(0.16, 1, 0.3, 1)'
