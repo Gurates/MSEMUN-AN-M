@@ -8,23 +8,19 @@ import {
   CheckCircle,
   Briefcase,
   Award,
-  X,
   LayoutGrid,
   Lock,
   RefreshCw,
   LogOut,
   Mail,
-  Phone,
-  Building,
-  GraduationCap,
   ArrowLeft,
   CheckCircle2,
   Clock,
   Sparkles
 } from 'lucide-react';
 import { PageView } from './Navbar';
-import { EmailModal } from './EmailModal';
-import { getApprovedMap, isApplicationApproved } from '../lib/approvalStore';
+import { ApplicationDetailModal } from './ApplicationDetailModal';
+import { getApprovedMap } from '../lib/approvalStore';
 
 type TabType = 'all' | 'registrations' | 'delegations' | 'chairboard_apps' | 'admin_apps' | 'press_apps';
 type StatusFilterType = 'all' | 'pending' | 'approved';
@@ -43,8 +39,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   const [statusFilter, setStatusFilter] = useState<StatusFilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any | null>(null);
-  const [emailModalItem, setEmailModalItem] = useState<any | null>(null);
+  const [activeApp, setActiveApp] = useState<{ item: any; tab: 'details' | 'email' } | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -162,14 +157,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       const next = { ...prev };
       for (const key of Object.keys(next)) {
         next[key] = next[key].map(item =>
-          item.id === updatedId ? { ...item, status: 'approved' } : item
+          item.id === updatedId ? { ...item, status: 'approved', isApproved: true } : item
         );
       }
       return next;
     });
 
-    if (selectedItem && selectedItem.id === updatedId) {
-      setSelectedItem((prev: any) => (prev ? { ...prev, status: 'approved' } : null));
+    if (activeApp && activeApp.item.id === updatedId) {
+      setActiveApp(prev => prev ? {
+        ...prev,
+        item: { ...prev.item, status: 'approved', isApproved: true }
+      } : null);
     }
   };
 
@@ -629,15 +627,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                     return (
                       <tr
                         key={item.id}
-                        onClick={() => setSelectedItem(item)}
+                        onClick={() => setActiveApp({ item, tab: 'details' })}
                         className="hover:bg-white/5 transition-colors cursor-pointer group"
                       >
+                        {/* Kategori */}
                         <td className="px-4 py-3">
                           <span className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold border ${getBadgeStyle(item.app_type)}`}>
                             {item.app_type}
                           </span>
                         </td>
 
+                        {/* Katılımcı Adı */}
                         <td className="px-4 py-3 font-medium text-white group-hover:text-amber-300 transition-colors">
                           {item.delegation_name ? (
                             <div>
@@ -656,14 +656,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                           )}
                         </td>
 
+                        {/* Okul */}
                         <td className="px-4 py-3 text-slate-300 truncate max-w-[180px]">
                           {item.school || '—'}
                         </td>
 
+                        {/* E-posta */}
                         <td className="px-4 py-3 text-slate-300 font-mono text-[11px] truncate max-w-[200px]">
                           {item.email}
                         </td>
 
+                        {/* Durum Rozeti */}
                         <td className="px-4 py-3 text-center">
                           {approved ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
@@ -678,24 +681,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                           )}
                         </td>
 
+                        {/* Tarih */}
                         <td className="px-4 py-3 text-right font-mono text-slate-400 text-[11px]">
                           {formatDate(item.created_at)}
                         </td>
 
+                        {/* İşlemler: Formu İncele & Onay Maili */}
                         <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                           <div className="inline-flex items-center gap-1.5">
                             <button
                               type="button"
-                              onClick={() => setEmailModalItem(item)}
-                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
+                              onClick={() => setActiveApp({ item, tab: 'details' })}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-white/10 hover:bg-white/15 text-white border border-white/15 transition-all cursor-pointer shadow-sm"
+                              title="Adayın başvuru formunu ve tüm detaylarını oku"
+                            >
+                              <FileText size={12} className="text-amber-400" />
+                              <span>Formu Oku</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setActiveApp({ item, tab: 'email' })}
+                              className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
                                 approved
                                   ? 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
                                   : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 shadow-sm'
                               }`}
-                              title={approved ? 'Onay mailini tekrar gönder veya görüntüle' : 'Bu başvuru için onay maili hazırla ve gönder'}
+                              title={approved ? 'Onay mailini tekrar görüntüle / gönder' : 'Onay maili hazırla ve gönder'}
                             >
                               <Mail size={12} className={approved ? 'text-slate-400' : 'text-amber-400'} />
-                              <span>{approved ? 'Tekrar İlet' : 'Onay Maili'}</span>
+                              <span className="hidden sm:inline">{approved ? 'Mail' : 'Onayla'}</span>
                             </button>
                           </div>
                         </td>
@@ -710,206 +725,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
 
       </div>
 
-      {selectedItem && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md overflow-hidden"
-          onClick={() => setSelectedItem(null)}
-        >
-          <div
-            className="relative w-full max-w-3xl max-h-[92vh] flex flex-col rounded-2xl bg-[#0c0c14] border border-white/20 shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between p-5 sm:p-6 border-b border-white/10 bg-[#0f0f1c] shrink-0">
-              <div className="space-y-1.5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className={`inline-block px-2.5 py-0.5 rounded text-xs font-semibold border ${getBadgeStyle(selectedItem.app_type)}`}>
-                    {selectedItem.app_type}
-                  </span>
-                  {selectedItem.isApproved || isApplicationApproved(selectedItem.id, selectedItem.status) ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
-                      <CheckCircle2 size={12} />
-                      <span>Onaylandı (Mail Gönderildi)</span>
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                      <Clock size={12} />
-                      <span>Onay Bekliyor</span>
-                    </span>
-                  )}
-                </div>
-
-                <h2 className="text-xl sm:text-2xl font-bold text-white font-serif break-words">
-                  {selectedItem.delegation_name || selectedItem.full_name}
-                </h2>
-                <p className="text-xs text-slate-400 font-mono">
-                  Başvuru Tarihi: {formatDate(selectedItem.created_at)}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const current = selectedItem;
-                    setEmailModalItem(current);
-                  }}
-                  className="btn-primary !px-3.5 !py-2 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-md"
-                >
-                  <Mail size={14} />
-                  <span>Onay Maili Gönder</span>
-                </button>
-
-                <button
-                  onClick={() => setSelectedItem(null)}
-                  className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer shrink-0"
-                  title="Pencereyi Kapat"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-5 text-xs text-slate-300">
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-xl bg-black/40 border border-white/10">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Mail size={16} className="text-amber-400 shrink-0" />
-                  <div className="min-w-0">
-                    <div className="text-[10px] uppercase font-mono text-slate-500">E-posta</div>
-                    <a href={`mailto:${selectedItem.email}`} className="text-slate-200 hover:text-amber-400 hover:underline break-all block font-mono">
-                      {selectedItem.email}
-                    </a>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Phone size={16} className="text-amber-400 shrink-0" />
-                  <div className="min-w-0">
-                    <div className="text-[10px] uppercase font-mono text-slate-500">Telefon Numarası</div>
-                    <a href={`tel:${selectedItem.phone}`} className="text-slate-200 hover:text-amber-400 hover:underline block font-mono">
-                      {selectedItem.phone || '—'}
-                    </a>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Building size={16} className="text-amber-400 shrink-0" />
-                  <div className="min-w-0">
-                    <div className="text-[10px] uppercase font-mono text-slate-500">Okul / Kurum</div>
-                    <div className="text-white font-medium break-words">{selectedItem.school || '—'}</div>
-                  </div>
-                </div>
-
-                {selectedItem.grade && (
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <GraduationCap size={16} className="text-amber-400 shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-[10px] uppercase font-mono text-slate-500">Sınıf / Seviye</div>
-                      <div className="text-white font-medium">{selectedItem.grade}</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {(selectedItem.committee_preference_1 || selectedItem.pref1) && (
-                <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2.5">
-                  <h3 className="text-xs uppercase font-mono font-bold text-amber-400">
-                    Komite Tercihleri
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                    <div className="p-2.5 rounded-lg bg-white/5 border border-white/10">
-                      <span className="text-[10px] text-slate-400 font-mono block mb-0.5">1. Tercih</span>
-                      <span className="font-semibold text-white uppercase break-words">
-                        {selectedItem.committee_preference_1 || selectedItem.pref1}
-                      </span>
-                    </div>
-                    <div className="p-2.5 rounded-lg bg-white/5 border border-white/10">
-                      <span className="text-[10px] text-slate-400 font-mono block mb-0.5">2. Tercih</span>
-                      <span className="font-semibold text-white uppercase break-words">
-                        {selectedItem.committee_preference_2 || selectedItem.pref2 || '—'}
-                      </span>
-                    </div>
-                    <div className="p-2.5 rounded-lg bg-white/5 border border-white/10">
-                      <span className="text-[10px] text-slate-400 font-mono block mb-0.5">3. Tercih</span>
-                      <span className="font-semibold text-white uppercase break-words">
-                        {selectedItem.committee_preference_3 || selectedItem.pref3 || '—'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {Object.entries(selectedItem).map(([key, value]) => {
-                if ([
-                  'id', 'created_at', 'full_name', 'email', 'phone', 'school', 'grade',
-                  'app_type', '_table', 'isApproved', 'committee_preference_1', 'committee_preference_2',
-                  'committee_preference_3', 'pref1', 'pref2', 'pref3'
-                ].includes(key)) return null;
-
-                if (!value || value === '') return null;
-
-                const customTitles: Record<string, string> = {
-                  exp_list: 'MUN Geçmişi ve Deneyimleri',
-                  org_exp_list: 'Organizasyon & Görev Deneyimi',
-                  motivation_letter: 'Motivasyon Mektubu',
-                  q_ai_suspicion: 'Soru: Delege Yapay Zeka Şüphesi Yönetimi',
-                  q_final_documents: 'Soru: Nihai Karar Metinleri Denetimi',
-                  q_directive_help: 'Soru: Kriz Direktif Yazım Yardımı',
-                  q_resolution_paper: 'Soru: Genel Kurul Karar Taslağı Zaman Yönetimi',
-                  q_disagreement: 'Soru: Divan İçi Usul Anlaşmazlığı Çözümü',
-                  crisis_directive: 'Örnek Kriz Direktifi',
-                  ga_procedure: 'Genel Kurul Usul Anlatımı',
-                  camera_model: 'Kamera / Fotoğraf Ekipman Modeli',
-                  expected_members: 'Beklenen Delegasyon Üye Sayısı',
-                  all_emails: 'Delegasyon Üyeleri E-posta Listesi',
-                  all_phones: 'Delegasyon Üyeleri Telefon Listesi',
-                  references: 'Referanslar',
-                  references_text: 'Referanslar',
-                  message: 'Ek Not / Mesaj',
-                  status: 'Başvuru Durumu'
-                };
-
-                const title = customTitles[key] || key.replace(/_/g, ' ').toUpperCase();
-
-                return (
-                  <div key={key} className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-1.5 overflow-hidden">
-                    <h4 className="text-[11px] font-mono uppercase font-bold text-amber-400">{title}</h4>
-                    <p className="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed break-words break-all [overflow-wrap:anywhere] max-w-full">
-                      {String(value)}
-                    </p>
-                  </div>
-                );
-              })}
-
-            </div>
-
-            <div className="p-4 sm:p-5 border-t border-white/10 bg-[#0f0f1c] flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => setEmailModalItem(selectedItem)}
-                className="btn-primary !px-4 !py-2 text-xs font-semibold inline-flex items-center gap-2 cursor-pointer shadow-md"
-              >
-                <Mail size={14} />
-                <span>Onay Maili Gönder ({selectedItem.full_name || selectedItem.delegation_name})</span>
-              </button>
-
-              <button
-                onClick={() => setSelectedItem(null)}
-                className="px-5 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-xs text-white transition-colors cursor-pointer"
-              >
-                Pencereyi Kapat
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {emailModalItem && (
-        <EmailModal
-          item={emailModalItem}
-          tableName={emailModalItem._table}
-          onClose={() => setEmailModalItem(null)}
+      {/* ═══════════════════════════════════════════════════════════════
+          APPLICATION DETAIL & EMAIL APPROVAL UNIFIED MODAL
+          ═══════════════════════════════════════════════════════════════ */}
+      {activeApp && (
+        <ApplicationDetailModal
+          item={activeApp.item}
+          tableName={activeApp.item._table}
+          initialTab={activeApp.tab}
+          onClose={() => setActiveApp(null)}
           onSuccess={handleApprovalSuccess}
         />
       )}
