@@ -9,8 +9,7 @@ import {
   AlertCircle,
   CheckCircle2,
   RefreshCw,
-  User,
-  Settings
+  User
 } from 'lucide-react';
 import {
   EmailParams,
@@ -55,7 +54,6 @@ export const EmailModal: React.FC<EmailModalProps> = ({
   const [copied, setCopied] = useState<boolean>(false);
   const [sending, setSending] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
-  const [showConfigHelp, setShowConfigHelp] = useState<boolean>(false);
   const [sentSuccess, setSentSuccess] = useState<boolean>(false);
 
   const senderEmail = getSenderEmail();
@@ -125,7 +123,6 @@ export const EmailModal: React.FC<EmailModalProps> = ({
       await completeApprovalFlow('Doğrudan API ile başarıyla gönderildi');
       setSentSuccess(true);
     } else if (result.notConfigured) {
-      setShowConfigHelp(true);
       setStatusMessage({
         type: 'info',
         text: 'Doğrudan otomatik gönderim için .env dosyasında SMTP veya Resend API anahtarı tanımlanmalıdır. Aşağıdaki "Gmail ile Aç ve Gönder" tuşuna basarak hemen gönderebilirsiniz!'
@@ -317,39 +314,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
                 </div>
               )}
 
-              <div className="pt-1">
-                <button
-                  type="button"
-                  onClick={() => setShowConfigHelp(!showConfigHelp)}
-                  className="inline-flex items-center gap-1.5 text-[11px] text-slate-400 hover:text-amber-400 transition-colors cursor-pointer"
-                >
-                  <Settings size={12} />
-                  <span>{showConfigHelp ? 'E-posta Ayarlarını Gizle' : 'E-posta Gönderim Ayarları (.env)'}</span>
-                </button>
 
-                {showConfigHelp && (
-                  <div className="mt-2 p-3.5 rounded-xl bg-black/60 border border-white/10 space-y-2 text-[11px] text-slate-300 font-mono">
-                    <p className="text-amber-300 font-semibold font-sans">
-                      Doğrudan Tek Tıkla Gönderim İçin .env Dosyası Ayarları:
-                    </p>
-                    <div className="p-2.5 rounded bg-black/80 text-slate-300 overflow-x-auto text-[10px]">
-                      <div># Gönderici Bilgileri</div>
-                      <div>VITE_SENDER_EMAIL={senderEmail}</div>
-                      <div>VITE_SENDER_NAME={senderName}</div>
-                      <div className="mt-1.5"># Yöntem A: Resend API (Ücretsiz https://resend.com)</div>
-                      <div>VITE_RESEND_API_KEY=re_123456789...</div>
-                      <div className="mt-1.5"># Yöntem B: Gmail SMTP (Uygulama Şifresi ile)</div>
-                      <div>SMTP_HOST=smtp.gmail.com</div>
-                      <div>SMTP_PORT=465</div>
-                      <div>SMTP_USER=ornek@gmail.com</div>
-                      <div>SMTP_PASS=xxxx xxxx xxxx xxxx</div>
-                    </div>
-                    <p className="text-slate-400 font-sans text-[11px]">
-                      İpucu: Hiçbir ayar yapmadan da aşağıdaki <strong className="text-white">"Gmail ile Aç ve Gönder"</strong> butonuna tıklayarak doğrudan resmi Gmail hesabınız üzerinden tek tıkla gönderebilirsiniz.
-                    </p>
-                  </div>
-                )}
-              </div>
             </>
           )}
 
