@@ -285,39 +285,198 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   const exportToCSV = () => {
     if (filteredData.length === 0) return;
 
-    const exportItems = filteredData.map(item => {
-      const { _table, isApproved, ...rest } = item;
-      return {
-        ...rest,
-        status: isApproved ? 'approved' : 'pending'
-      };
-    });
-
-    const sanitizeForCSV = (val: any): string => {
+    // Hücre içeriğindeki satır sonlarını ve fazla boşlukları temizleyerek tek satıra indirger
+    const sanitizeCell = (val: any): string => {
       if (val === null || val === undefined) return '""';
       let str = String(val);
+      // Excel satırının bozulmaması için hücre içi alt satırları (enter/newline) boşlukla birleştir
+      str = str.replace(/\r\n|\r|\n/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!str) return '""';
+      // Excel formül enjeksiyonu koruması (=, +, -, @)
       if (/^[=+\-@\t\r]/.test(str)) {
         str = `'${str}`;
       }
       return `"${str.replace(/"/g, '""')}"`;
     };
 
-    const headers = Object.keys(exportItems[0]);
-    const csvContent = [
-      headers.join(','),
-      ...exportItems.map(item =>
-        headers.map(header => sanitizeForCSV((item as any)[header])).join(',')
-      )
-    ].join('\n');
+    // Durum kodunu anlaşılır Türkçe etikete çevirir
+    const getStatusLabel = (status: string): string => {
+      switch (status) {
+        case 'approved':
+          return 'Onaylandı';
+        case 'waitlist':
+          return 'Waitlist (Yedek)';
+        case 'rejected':
+          return 'Reddedildi';
+        case 'pending':
+        default:
+          return 'İşlem Bekliyor';
+      }
+    };
+
+    // Tarihi DD.MM.YYYY HH:mm formatına dönüştürür
+    const formatCsvDate = (dateString: string): string => {
+      if (!dateString) return '';
+      try {
+        const d = new Date(dateString);
+        if (isNaN(d.getTime())) return '';
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        return `${day}.${month}.${year} ${hours}:${minutes}`;
+      } catch {
+        return '';
+      }
+    };
+
+    type ColumnDef = {
+      header: string;
+      getter: (item: any, index: number) => any;
+    };
+
+    let columns: ColumnDef[] = [];
+
+    if (activeTab === 'registrations') {
+      columns = [
+        { header: 'Sıra No', getter: (_, i) => i + 1 },
+        { header: 'Başvuru Türü', getter: (item) => item.app_type || 'Delege' },
+        { header: 'Başvuru Durumu', getter: (item) => getStatusLabel(item.status) },
+        { header: 'Başvuru Tarihi', getter: (item) => formatCsvDate(item.created_at) },
+        { header: 'Ad Soyad', getter: (item) => item.full_name || '' },
+        { header: 'E-posta', getter: (item) => item.email || '' },
+        { header: 'Telefon', getter: (item) => item.phone || '' },
+        { header: 'Okul / Kurum', getter: (item) => item.school || '' },
+        { header: 'Sınıf / Seviye', getter: (item) => item.grade || '' },
+        { header: '1. Komite Tercihi', getter: (item) => item.committee_preference_1 || item.pref1 || '' },
+        { header: '2. Komite Tercihi', getter: (item) => item.committee_preference_2 || item.pref2 || '' },
+        { header: '3. Komite Tercihi', getter: (item) => item.committee_preference_3 || item.pref3 || '' },
+        { header: 'Motivasyon Mektubu', getter: (item) => item.motivation_letter || '' },
+        { header: 'MUN Deneyimi', getter: (item) => item.exp_list || item.org_exp_list || '' },
+        { header: 'Referanslar', getter: (item) => item.references || item.references_text || '' },
+        { header: 'Ek Mesaj / Not', getter: (item) => item.message || '' },
+      ];
+    } else if (activeTab === 'delegations') {
+      columns = [
+        { header: 'Sıra No', getter: (_, i) => i + 1 },
+        { header: 'Başvuru Türü', getter: () => 'Delegasyon' },
+        { header: 'Başvuru Durumu', getter: (item) => getStatusLabel(item.status) },
+        { header: 'Başvuru Tarihi', getter: (item) => formatCsvDate(item.created_at) },
+        { header: 'Delegasyon Adı', getter: (item) => item.delegation_name || '' },
+        { header: 'Baş Delege (İletişim Kişisi)', getter: (item) => item.full_name || '' },
+        { header: 'Okul / Kurum', getter: (item) => item.school || '' },
+        { header: 'Beklenen Delege Sayısı', getter: (item) => item.expected_members || '' },
+        { header: 'E-posta', getter: (item) => item.email || '' },
+        { header: 'Telefon', getter: (item) => item.phone || '' },
+        { header: 'Delegasyon Üye E-postaları', getter: (item) => item.all_emails || '' },
+        { header: 'Delegasyon Üye Telefonları', getter: (item) => item.all_phones || '' },
+        { header: 'Ek Mesaj / Not', getter: (item) => item.message || '' },
+      ];
+    } else if (activeTab === 'chairboard_apps') {
+      columns = [
+        { header: 'Sıra No', getter: (_, i) => i + 1 },
+        { header: 'Başvuru Türü', getter: () => 'Chairboard' },
+        { header: 'Başvuru Durumu', getter: (item) => getStatusLabel(item.status) },
+        { header: 'Başvuru Tarihi', getter: (item) => formatCsvDate(item.created_at) },
+        { header: 'Ad Soyad', getter: (item) => item.full_name || '' },
+        { header: 'E-posta', getter: (item) => item.email || '' },
+        { header: 'Telefon', getter: (item) => item.phone || '' },
+        { header: 'Okul / Kurum', getter: (item) => item.school || '' },
+        { header: 'Sınıf / Seviye', getter: (item) => item.grade || '' },
+        { header: '1. Komite Tercihi', getter: (item) => item.pref1 || item.committee_preference_1 || '' },
+        { header: '2. Komite Tercihi', getter: (item) => item.pref2 || item.committee_preference_2 || '' },
+        { header: '3. Komite Tercihi', getter: (item) => item.pref3 || item.committee_preference_3 || '' },
+        { header: 'Motivasyon Mektubu', getter: (item) => item.motivation_letter || '' },
+        { header: 'MUN / Divan Deneyimi', getter: (item) => item.exp_list || '' },
+        { header: 'Soru: Yapay Zeka Şüphesi', getter: (item) => item.q_ai_suspicion || '' },
+        { header: 'Soru: Karar Metinleri', getter: (item) => item.q_final_documents || '' },
+        { header: 'Soru: Kriz Direktifi', getter: (item) => item.q_directive_help || '' },
+        { header: 'Soru: Karar Taslağı', getter: (item) => item.q_resolution_paper || '' },
+        { header: 'Soru: Divan Anlaşmazlığı', getter: (item) => item.q_disagreement || '' },
+        { header: 'Örnek Kriz Direktifi', getter: (item) => item.crisis_directive || '' },
+        { header: 'Genel Kurul Usulü', getter: (item) => item.ga_procedure || '' },
+        { header: 'Referanslar', getter: (item) => item.references_text || item.references || '' },
+        { header: 'Ek Mesaj / Not', getter: (item) => item.message || '' },
+      ];
+    } else if (activeTab === 'admin_apps') {
+      columns = [
+        { header: 'Sıra No', getter: (_, i) => i + 1 },
+        { header: 'Başvuru Türü', getter: () => 'Admin Staff' },
+        { header: 'Başvuru Durumu', getter: (item) => getStatusLabel(item.status) },
+        { header: 'Başvuru Tarihi', getter: (item) => formatCsvDate(item.created_at) },
+        { header: 'Ad Soyad', getter: (item) => item.full_name || '' },
+        { header: 'E-posta', getter: (item) => item.email || '' },
+        { header: 'Telefon', getter: (item) => item.phone || '' },
+        { header: 'Okul / Kurum', getter: (item) => item.school || '' },
+        { header: 'Sınıf / Seviye', getter: (item) => item.grade || '' },
+        { header: 'Organizasyon Deneyimi', getter: (item) => item.org_exp_list || '' },
+        { header: 'Referanslar', getter: (item) => item.references_text || item.references || '' },
+        { header: 'Ek Mesaj / Not', getter: (item) => item.message || '' },
+      ];
+    } else if (activeTab === 'press_apps') {
+      columns = [
+        { header: 'Sıra No', getter: (_, i) => i + 1 },
+        { header: 'Başvuru Türü', getter: () => 'Press Corps' },
+        { header: 'Başvuru Durumu', getter: (item) => getStatusLabel(item.status) },
+        { header: 'Başvuru Tarihi', getter: (item) => formatCsvDate(item.created_at) },
+        { header: 'Ad Soyad', getter: (item) => item.full_name || '' },
+        { header: 'E-posta', getter: (item) => item.email || '' },
+        { header: 'Telefon', getter: (item) => item.phone || '' },
+        { header: 'Okul / Kurum', getter: (item) => item.school || '' },
+        { header: 'Sınıf / Seviye', getter: (item) => item.grade || '' },
+        { header: 'Kamera / Ekipman Modeli', getter: (item) => item.camera_model || '' },
+        { header: 'Organizasyon & Basın Deneyimi', getter: (item) => item.org_exp_list || '' },
+        { header: 'Referanslar', getter: (item) => item.references_text || item.references || '' },
+        { header: 'Ek Mesaj / Not', getter: (item) => item.message || '' },
+      ];
+    } else {
+      // 'all' (Tüm Başvurular)
+      columns = [
+        { header: 'Sıra No', getter: (_, i) => i + 1 },
+        { header: 'Başvuru Türü', getter: (item) => item.app_type || 'Katılımcı' },
+        { header: 'Başvuru Durumu', getter: (item) => getStatusLabel(item.status) },
+        { header: 'Başvuru Tarihi', getter: (item) => formatCsvDate(item.created_at) },
+        { header: 'Katılımcı / Delegasyon Adı', getter: (item) => item.delegation_name || item.full_name || '' },
+        { header: 'E-posta', getter: (item) => item.email || '' },
+        { header: 'Telefon', getter: (item) => item.phone || '' },
+        { header: 'Okul / Kurum', getter: (item) => item.school || '' },
+        { header: 'Sınıf / Seviye', getter: (item) => item.grade || '' },
+        { header: '1. Komite Tercihi', getter: (item) => item.committee_preference_1 || item.pref1 || '' },
+        { header: '2. Komite Tercihi', getter: (item) => item.committee_preference_2 || item.pref2 || '' },
+        { header: '3. Komite Tercihi', getter: (item) => item.committee_preference_3 || item.pref3 || '' },
+        { header: 'Beklenen Delege Sayısı', getter: (item) => item.expected_members || '' },
+        { header: 'Kamera Modeli (Basın)', getter: (item) => item.camera_model || '' },
+        { header: 'Motivasyon Mektubu', getter: (item) => item.motivation_letter || '' },
+        { header: 'MUN / Organizasyon Deneyimi', getter: (item) => item.org_exp_list || item.exp_list || '' },
+        { header: 'Delegasyon Üye E-postaları', getter: (item) => item.all_emails || '' },
+        { header: 'Delegasyon Üye Telefonları', getter: (item) => item.all_phones || '' },
+        { header: 'Referanslar', getter: (item) => item.references_text || item.references || '' },
+        { header: 'Ek Mesaj / Not', getter: (item) => item.message || '' },
+      ];
+    }
+
+    // Excel (Türkiye/Avrupa) noktalı virgül (;) ayırıcısını kullanır
+    const delimiter = ';';
+    const headerRow = columns.map(c => `"${c.header.replace(/"/g, '""')}"`).join(delimiter);
+    const dataRows = filteredData.map((item, index) =>
+      columns.map(c => sanitizeCell(c.getter(item, index))).join(delimiter)
+    );
+
+    // UTF-8 BOM (\uFEFF) Excel'in Türkçe karakterleri (ş, ğ, ı, ö, ü, ç) hatasız açmasını sağlar
+    const BOM = '\uFEFF';
+    const csvContent = BOM + [headerRow, ...dataRows].join('\r\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `msemun_${activeTab}_${new Date().toISOString().split('T')[0]}.csv`);
+    const fileSuffix = activeTab === 'all' ? 'tum_basvurular' : activeTab;
+    link.setAttribute('download', `msemun_${fileSuffix}_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const formatDate = (dateString: string) => {

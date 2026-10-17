@@ -1,3 +1,5 @@
+import { supabase } from './supabase';
+
 export type EmailDecision = 'approval' | 'rejection' | 'waitlist';
 
 export interface EmailParams {
@@ -283,11 +285,21 @@ export const sendEmailViaApi = async (payload: SendEmailPayload): Promise<SendRe
   const senderEmail = payload.senderEmail || getSenderEmail();
   const senderName = payload.senderName || getSenderName();
 
+  // Retrieve current admin session JWT token
+  let token = '';
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    token = session?.access_token || '';
+  } catch (err) {
+    console.warn('Could not retrieve Supabase session token:', err);
+  }
+
   try {
     const res = await fetch('/api/send-email', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
       },
       body: JSON.stringify({
         ...payload,
@@ -305,43 +317,18 @@ export const sendEmailViaApi = async (payload: SendEmailPayload): Promise<SendRe
         return { success: false, notConfigured: true, message: data.message };
       }
       return { success: false, error: data.error || 'Gönderim başarısız oldu' };
+    } else {
+      const errData = await res.json().catch(() => ({}));
+      return {
+        success: false,
+        error: errData.error || `Sunucu hatası (${res.status})`
+      };
     }
-  } catch (err) {
-    console.warn('Backend /api/send-email not accessible, trying client direct check...', err);
+  } catch (err: any) {
+    console.warn('Backend /api/send-email error:', err);
+    return {
+      success: false,
+      error: err.message || 'E-posta servisine erişilemedi. "Gmail ile Aç" seçeneğiyle doğrudan gönderebilirsiniz.'
+    };
   }
-
-  const clientResendKey = import.meta.env.VITE_RESEND_API_KEY;
-  if (clientResendKey) {
-    try {
-      const resendRes = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${clientResendKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          from: `${senderName} <${senderEmail}>`,
-          to: [payload.to],
-          subject: payload.subject,
-          text: payload.text,
-          html: payload.html
-        })
-      });
-
-      if (resendRes.ok) {
-        return { success: true, provider: 'resend-direct', message: 'E-posta Resend üzerinden iletildi!' };
-      } else {
-        const errJson = await resendRes.json();
-        return { success: false, error: errJson.message || 'Resend API hata verdi' };
-      }
-    } catch (err: any) {
-      return { success: false, error: err.message || 'Resend bağlantı hatası' };
-    }
-  }
-
-  return {
-    success: false,
-    notConfigured: true,
-    message: 'E-posta gönderim yapılandırması bulunamadı.'
-  };
 };

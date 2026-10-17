@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { createClient } from '@supabase/supabase-js';
 
 export const handler = async (event: any) => {
   if (event.httpMethod !== 'POST') {
@@ -6,6 +7,30 @@ export const handler = async (event: any) => {
       statusCode: 405,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: 'Method Not Allowed' })
+    };
+  }
+
+  // 1. Authenticate request: Caller must have a valid Supabase Auth session token
+  const authHeader = (event.headers['authorization'] || event.headers['Authorization'] || '') as string;
+  if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
+    return {
+      statusCode: 401,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ success: false, error: 'Yetkisiz erişim: Bu işlem için oturum açmış yönetici yetkisi gereklidir.' })
+    };
+  }
+
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://wqrlqoxgsutblmrnkmqi.supabase.co';
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_TZ7Wnp7TTpld6tRAt5TO4w_9_wcs-_0';
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+  if (userError || !user) {
+    return {
+      statusCode: 403,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ success: false, error: 'Erişim reddedildi: Yönetici oturumu geçersiz veya süresi dolmuş.' })
     };
   }
 
@@ -17,7 +42,19 @@ export const handler = async (event: any) => {
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ success: false, error: 'to, subject, and text/html are required' })
+        body: JSON.stringify({ success: false, error: 'to, subject ve text/html alanları zorunludur.' })
+      };
+    }
+
+    // Basic recipient email sanitization
+    const recipientList = Array.isArray(to) ? to : [to];
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const allValid = recipientList.every((e: string) => typeof e === 'string' && emailRegex.test(e.trim()));
+    if (!allValid) {
+      return {
+        statusCode: 400,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ success: false, error: 'Geçersiz alıcı e-posta formatı.' })
       };
     }
 
@@ -25,7 +62,7 @@ export const handler = async (event: any) => {
     const smtpPass = process.env.SMTP_PASS;
     const senderEmail = process.env.VITE_SENDER_EMAIL || smtpUser || 'msemun26@gmail.com';
     const senderName = process.env.VITE_SENDER_NAME || 'MSEMUN Secretariat';
-    const resendApiKey = process.env.VITE_RESEND_API_KEY || process.env.RESEND_API_KEY;
+    const resendApiKey = process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY;
 
     // Option 1: Resend API
     if (resendApiKey) {
@@ -37,7 +74,7 @@ export const handler = async (event: any) => {
         },
         body: JSON.stringify({
           from: `${senderName} <${senderEmail}>`,
-          to: Array.isArray(to) ? to : [to],
+          to: recipientList,
           subject: subject,
           text: text,
           html: html || (text ? text.replace(/\n/g, '<br/>') : '')
@@ -55,7 +92,7 @@ export const handler = async (event: any) => {
         return {
           statusCode: 400,
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ success: false, provider: 'resend', error: (resendData as any)?.message || 'Resend error' })
+          body: JSON.stringify({ success: false, provider: 'resend', error: (resendData as any)?.message || 'Resend hatası' })
         };
       }
     }
@@ -88,7 +125,7 @@ export const handler = async (event: any) => {
       const info = await transporter.sendMail({
         from: `"${senderName}" <${smtpUser}>`,
         replyTo: senderEmail,
-        to: to,
+        to: recipientList,
         subject: subject,
         text: text,
         html: html || (text ? text.replace(/\n/g, '<br/>') : '')
