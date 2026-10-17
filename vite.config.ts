@@ -76,15 +76,28 @@ function emailApiPlugin(env: Record<string, string>): Plugin {
             }
 
             if (smtpUser && smtpPass) {
-              const transporter = nodemailer.createTransport({
-                host: env.SMTP_HOST || 'smtp.gmail.com',
-                port: Number(env.SMTP_PORT) || 465,
-                secure: Number(env.SMTP_PORT) === 465 || !env.SMTP_PORT,
-                auth: {
-                  user: smtpUser,
-                  pass: smtpPass
-                }
-              });
+              const cleanPass = smtpPass.replace(/\s+/g, '');
+              const isGmail = (env.SMTP_HOST || '').includes('gmail') || smtpUser.includes('gmail.com');
+
+              const transporter = nodemailer.createTransport(
+                isGmail
+                  ? {
+                      service: 'gmail',
+                      auth: {
+                        user: smtpUser,
+                        pass: cleanPass
+                      }
+                    }
+                  : {
+                      host: env.SMTP_HOST || 'smtp.gmail.com',
+                      port: Number(env.SMTP_PORT) || 465,
+                      secure: Number(env.SMTP_PORT) === 465 || !env.SMTP_PORT,
+                      auth: {
+                        user: smtpUser,
+                        pass: cleanPass
+                      }
+                    }
+              );
 
               const info = await transporter.sendMail({
                 from: `"${senderName}" <${smtpUser}>`,

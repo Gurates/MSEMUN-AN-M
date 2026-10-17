@@ -3,7 +3,7 @@ import { ArrowRight, Compass, Landmark, Flame, Users, MapPin } from 'lucide-reac
 import { PageView } from './Navbar';
 import { EmbersCanvas } from './EmbersCanvas';
 
-export const DEFAULT_TARGET_DATE = '2026-11-20T09:00:00';
+export const DEFAULT_TARGET_DATE = '2026-12-04T09:00:00';
 
 interface HomePageProps {
   onNavigate: (page: PageView) => void;

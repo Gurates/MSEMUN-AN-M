@@ -105,7 +105,7 @@ APPLICATION & PARTICIPATION DETAILS:
 CONFERENCE LOGISTICS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • Conference: MSEMUN 2026 (XXVI Edition)
-• Dates: ${CONFERENCE_INFO.dates || 'October 24 – 26, 2026'}
+• Dates: ${CONFERENCE_INFO.dates || 'December 04 – 06, 2026'}
 • Venue: ${CONFERENCE_INFO.location || 'The Imperial Congress Palace, Istanbul'}
 
 NEXT STEPS & PREPARATION:

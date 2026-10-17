@@ -6,10 +6,10 @@ export const CONFERENCE_INFO = {
   year: '2026',
   tagline: 'IGNITING GLOBAL DIPLOMACY',
   subheading: 'Where diplomatic intellect meets the crucible of international crisis. 500+ delegates unite to forge tomorrow’s sovereign resolutions.',
-  dates: 'OCTOBER 24 – 26, 2026',
+  dates: 'DECEMBER 04 – 06, 2026',
   location: 'THE IMPERIAL CONGRESS PALACE, ISTANBUL',
   coordinates: '41.0082° N, 28.9784° E',
-  registrationDeadline: '2026-10-10T23:59:59',
+  registrationDeadline: '2026-11-27T23:59:59',
   stats: [
     { label: 'GLOBAL DELEGATES', value: '550+', description: 'Representing prestigious institutions worldwide', iconName: 'Users' },
     { label: 'SPECIALIZED CHAMBERS', value: '12', description: 'From General Assembly to high-intensity Crisis', iconName: 'Shield' },
@@ -229,7 +229,7 @@ export const SCHEDULE_DATA: DaySchedule[] = [
     day: 1,
     title: 'DAY 01',
     theme: 'THE SPARK',
-    date: 'Friday, October 24, 2026',
+    date: 'Friday, December 04, 2026',
     sessions: [
       { time: '08:30 – 10:00', title: 'Delegate Registration & Badge Accreditation', location: 'Grand Atrium Hall', type: 'break', description: 'Arrival of international delegations, verification of credentials, delegate packet collection.' },
       { time: '10:00 – 11:45', title: 'Solemn Opening Ceremony & Torch Lighting', location: 'Plenary Grand Amphitheater', type: 'plenary', description: 'Opening address by Secretary-General, keynote speeches by guest diplomats, inaugural ceremony.' },
@@ -243,7 +243,7 @@ export const SCHEDULE_DATA: DaySchedule[] = [
     day: 2,
     title: 'DAY 02',
     theme: 'THE CRUCIBLE',
-    date: 'Saturday, October 25, 2026',
+    date: 'Saturday, December 05, 2026',
     sessions: [
       { time: '09:00 – 11:30', title: 'Committee Session III: Draft Resolution Mergers', location: 'Assigned Committee Chambers', type: 'caucus', description: 'Intensive unmoderated caucusing, clause-by-clause drafting, coalition alignment.' },
       { time: '11:30 – 13:00', title: 'Flashpoint Crisis Directive 01 / UNSC Emergency Order', location: 'Crisis & Security Chambers', type: 'crisis', description: 'Breaking news broadcast: Sudden geopolitical escalation requiring rapid cabinet response.' },
@@ -257,7 +257,7 @@ export const SCHEDULE_DATA: DaySchedule[] = [
     day: 3,
     title: 'DAY 03',
     theme: 'THE BEACON',
-    date: 'Sunday, October 26, 2026',
+    date: 'Sunday, December 06, 2026',
     sessions: [
       { time: '09:30 – 12:00', title: 'Committee Session VI: Final Voting Procedure', location: 'Assigned Committee Chambers', type: 'caucus', description: 'Roll call votes on draft resolutions. Passage of historic conference treaties.' },
       { time: '12:15 – 13:30', title: 'Farewell Luncheon & Commemorative Photo', location: 'Palace Courtyard', type: 'break', description: 'Delegation photography and informal closing conversations.' },
