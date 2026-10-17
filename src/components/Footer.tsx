@@ -71,7 +71,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-500">
           <div>
-            © {new Date().getFullYear()} MSEMUN Model United Nations Conference. {CONFERENCE_INFO.dates} • Istanbul.
+            © {new Date().getFullYear()} MSEMUN Model United Nations Conference. {CONFERENCE_INFO.dates} • İzmir.
           </div>
           <div className="flex items-center gap-2.5 text-slate-400">
             <span>Secretariat:</span>

@@ -7,8 +7,8 @@ export const CONFERENCE_INFO = {
   tagline: 'IGNITING GLOBAL DIPLOMACY',
   subheading: 'Where diplomatic intellect meets the crucible of international crisis. 500+ delegates unite to forge tomorrow’s sovereign resolutions.',
   dates: 'DECEMBER 04 – 06, 2026',
-  location: 'THE IMPERIAL CONGRESS PALACE, ISTANBUL',
-  coordinates: '41.0082° N, 28.9784° E',
+  location: 'THE IMPERIAL CONGRESS PALACE, İZMİR',
+  coordinates: '38.4237° N, 27.1428° E',
   registrationDeadline: '2026-11-27T23:59:59',
   stats: [
     { label: 'GLOBAL DELEGATES', value: '550+', description: 'Representing prestigious institutions worldwide', iconName: 'Users' },
@@ -233,7 +233,7 @@ export const SCHEDULE_DATA: DaySchedule[] = [
     sessions: [
       { time: '08:30 – 10:00', title: 'Delegate Registration & Badge Accreditation', location: 'Grand Atrium Hall', type: 'break', description: 'Arrival of international delegations, verification of credentials, delegate packet collection.' },
       { time: '10:00 – 11:45', title: 'Solemn Opening Ceremony & Torch Lighting', location: 'Plenary Grand Amphitheater', type: 'plenary', description: 'Opening address by Secretary-General, keynote speeches by guest diplomats, inaugural ceremony.' },
-      { time: '12:00 – 13:30', title: 'Diplomatic Luncheon & Networking', location: 'Bosphorus Terrace', type: 'break', description: 'Informal delegate reception, bloc consultations, and faculty advisor briefing.' },
+      { time: '12:00 – 13:30', title: 'Diplomatic Luncheon & Networking', location: 'Aegean Terrace', type: 'break', description: 'Informal delegate reception, bloc consultations, and faculty advisor briefing.' },
       { time: '13:30 – 16:00', title: 'Committee Session I: Roll Call & Agenda Setting', location: 'Assigned Committee Chambers', type: 'caucus', description: 'Formal establishment of quorum, introductory speeches, opening of the speakers list.' },
       { time: '16:15 – 18:30', title: 'Committee Session II: Moderated Debate & Initial Blocs', location: 'Assigned Committee Chambers', type: 'caucus', description: 'Substantive debates on primary sub-topics, unmoderated caucus, and initial working paper frameworks.' },
       { time: '19:30 – 21:30', title: 'Delegate Welcome Soirée & Cultural Exchange', location: 'The Sovereign Ballroom', type: 'gala', description: 'An evening of cultural camaraderie, diplomatic social networking, and live ambient music.' }
@@ -250,7 +250,7 @@ export const SCHEDULE_DATA: DaySchedule[] = [
       { time: '13:00 – 14:15', title: 'Executive Working Lunch', location: 'Imperial Dining Suite', type: 'break', description: 'Delegates negotiate bilateral compromises over luncheon.' },
       { time: '14:15 – 17:00', title: 'Committee Session IV: Amendments & Chair Verification', location: 'Assigned Committee Chambers', type: 'caucus', description: 'Introduction of friendly and unfriendly amendments, formal review of draft resolutions.' },
       { time: '17:15 – 19:30', title: 'Committee Session V: Midnight Crisis Climax', location: 'Crisis Hub / JCC', type: 'crisis', description: 'High-intensity strategic showdown. Simultaneous joint directives deployed.' },
-      { time: '20:30 – 23:00', title: 'The Flame Gala & Diplomatic Ball', location: 'Palace Waterfront Pavilion', type: 'gala', description: 'Black-tie evening celebrating international youth leadership with panoramic Bosphorus views.' }
+      { time: '20:30 – 23:00', title: 'The Flame Gala & Diplomatic Ball', location: 'Palace Waterfront Pavilion', type: 'gala', description: 'Black-tie evening celebrating international youth leadership with panoramic Aegean Sea views.' }
     ]
   },
   {
@@ -270,9 +270,9 @@ export const SCHEDULE_DATA: DaySchedule[] = [
 export const VENUE_INFO = {
   title: 'THE IMPERIAL CONGRESS PALACE',
   subtitle: 'A Masterpiece of Heritage & Modern Diplomatic Grandeur',
-  city: 'Istanbul, Turkey',
-  address: 'Dolmabahçe Avenue, Beşiktaş, Istanbul',
-  description: 'Situated on the historic shores of the Bosphorus where East meets West, the Imperial Congress Palace provides world-class plenary amphitheaters, acoustic-engineered committee chambers, and panoramic diplomatic lounges.',
+  city: 'İzmir, Turkey',
+  address: 'Alsancak, Konak, İzmir',
+  description: 'Situated on the historic shores of the Aegean Sea, the Imperial Congress Palace provides world-class plenary amphitheaters, acoustic-engineered committee chambers, and panoramic diplomatic lounges.',
   highlights: [
     { title: 'Plenary Amphitheater', desc: 'State-of-the-art 1,200 seat acoustic auditorium for ceremonies and General Assembly debate.' },
     { title: '12 Soundproof Chambers', desc: 'Individual committee rooms equipped with broadcast feeds and digital directive consoles.' },

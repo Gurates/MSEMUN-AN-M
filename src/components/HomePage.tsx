@@ -274,7 +274,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           >
             <div className="flex items-center justify-center gap-3 mb-8">
               <span className="w-12 h-[1px] bg-amber-500/30" />
-              <span className="font-mono text-xs text-amber-400 tracking-[0.25em] uppercase">XXVI EDITION // Izmir 2026</span>
+              <span className="font-mono text-xs text-amber-400 tracking-[0.25em] uppercase">XXVI EDITION // İZMİR 2026</span>
               <span className="w-12 h-[1px] bg-amber-500/30" />
             </div>
 
@@ -332,10 +332,10 @@ export const HomePage: React.FC<HomePageProps> = ({
                   <MapPin className="w-5 h-5" />
                 </div>
                 <h3 className="font-serif font-bold text-white text-base mb-1.5">
-                  Izmir 2026
+                  İzmir 2026
                 </h3>
                 <p className="text-xs text-slate-300 leading-relaxed font-sans">
-                  Premier historic setting bridging continents. Official conference dates to be announced.
+                  4 – 6 Aralık 2026. Premier historic Aegean setting uniting future diplomats.
                 </p>
               </div>
             </div>

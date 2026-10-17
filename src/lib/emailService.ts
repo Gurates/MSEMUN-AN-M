@@ -37,15 +37,48 @@ export const getSenderName = (): string => {
 };
 
 /**
- * 1. ONAY MAİLİ ŞABLONU (Approval)
- * - Standart (Delege vb.) veya Chairboard için özelleştirilmiş
+ * 1. ASIL ONAY MAİLİ ŞABLONU (Approval)
+ * - Katılımcı hangi pozisyona başvurduysa (Delege, Chairboard, Admin, Press vb.) o pozisyonun ONAYI olarak gider.
  */
 export const generateApprovalTemplate = (params: EmailParams, isChairboard: boolean = false): string => {
-  const { name, role = 'Delegate' } = params;
+  const { name, role = isChairboard ? 'Chairboard' : 'Delegate' } = params;
+  const applicantName = name ? name.trim() : 'Applicant';
+  const effectiveRole = isChairboard ? 'Chairboard' : role;
+
+  return `Dear ${applicantName},
+
+We are very pleased with your interest in being part of the MSEMUN'26. Following a long review process by our Secretariat, we are thrilled to inform you that your ${effectiveRole} application has been approved. 
+
+To complete your registration, we kindly request a payment of ... TL to the bank account provided below until .... This fee is inclusive of the welcome pack, meals, desserts, beverages etc. 
+
+Account Name: 
+Account Holder:
+IBAN:
+Description: Your Name - Position - Donation
+Description Example: ${applicantName} - ${effectiveRole} - Donation
+
+After completing the payment, please reply to this email with the receipt before the deadline. Your registration will not be completed if you do not include the receipt. 
+- Please be aware that all payments are non-refundable.
+
+Should you have any questions or require further assistance, please do not hesitate to contact us.
+
+Bade Kızılgün: +90 552 578 31 37
+Lâl Çarıkoğlu: +90 532 364 70 06
+
+Instagram: @msemun2026
+
+Best Regards,
+MSEMUN'26 Public Relations Team`;
+};
+
+/**
+ * 2. CHAIRBOARD İÇİN DELEGE TEKLİFİ ŞABLONU (Chairboard başvurusu kabul edilmeyip Delege olarak katılım teklif edildiğinde)
+ */
+export const generateChairboardDelegateOfferTemplate = (params: EmailParams): string => {
+  const { name } = params;
   const applicantName = name ? name.trim() : 'Applicant';
 
-  if (isChairboard) {
-    return `Dear ${applicantName},
+  return `Dear ${applicantName},
 
 Thank you for your interest in applying for a Chairboard position at MSEMUN'26.
 
@@ -72,36 +105,10 @@ Instagram: @msemun2026
 
 Best Regards,
 MSEMUN'26 Public Relations Team`;
-  }
-
-  return `Dear ${applicantName},
-
-We are very pleased with your interest in being part of the MSEMUN'26. Following a long review process by our Secretariat, we are thrilled to inform you that your ${role} application has been approved. 
-
-To complete your registration, we kindly request a payment of ... TL to the bank account provided below until .... This fee is inclusive of the welcome pack, meals, desserts, beverages etc. 
-
-Account Name: 
-Account Holder:
-IBAN:
-Description: Your Name - Position - Donation
-Description Example: ${applicantName} - ${role} - Donation
-
-After completing the payment, please reply to this email with the receipt before the deadline. Your registration will not be completed if you do not include the receipt. 
-- Please be aware that all payments are non-refundable.
-
-Should you have any questions or require further assistance, please do not hesitate to contact us.
-
-Bade Kızılgün: +90 552 578 31 37
-Lâl Çarıkoğlu: +90 532 364 70 06
-
-Instagram: @msemun2026
-
-Best Regards,
-MSEMUN'26 Public Relations Team`;
 };
 
 /**
- * 2. RET MAİLİ ŞABLONU (Rejection)
+ * 3. RET MAİLİ ŞABLONU (Rejection)
  */
 export const generateRejectionTemplate = (params: EmailParams): string => {
   const { name } = params;
@@ -125,7 +132,7 @@ MSEMUN'26 Public Relations Team`;
 };
 
 /**
- * 3. WAITLIST MAİLİ ŞABLONU (Waiting List)
+ * 4. WAITLIST MAİLİ ŞABLONU (Waiting List)
  */
 export const generateWaitlistTemplate = (params: EmailParams): string => {
   const { name, role = 'Delegate' } = params;
@@ -166,10 +173,8 @@ export const getSubjectForDecision = (
   if (decision === 'waitlist') {
     return `MSEMUN'26 — Waiting List Status (${safeName})`;
   }
-  if (isChairboard) {
-    return `MSEMUN'26 — Application Status Update (${safeName})`;
-  }
-  return `MSEMUN'26 — ${role} Application Approved! (${safeName})`;
+  const effectiveRole = isChairboard ? 'Chairboard' : role;
+  return `MSEMUN'26 — ${effectiveRole} Application Approved! (${safeName})`;
 };
 
 // Geriye dönük uyumluluk takma adları
@@ -255,7 +260,7 @@ export const generateHtmlTemplate = (
     </div>
 
     <div style="background-color: #08080d; padding: 20px 24px; text-align: center; border-top: 1px solid rgba(255,255,255,0.08); font-size: 11px; color: #64748b;">
-      <p style="margin: 0 0 6px 0;">MSEMUN Model United Nations Conference • Istanbul, Turkey</p>
+      <p style="margin: 0 0 6px 0;">MSEMUN Model United Nations Conference • İzmir, Turkey</p>
       <p style="margin: 0;">Bu bilgilendirme e-postası resmi MSEMUN Genel Sekreterliği tarafından iletilmiştir.</p>
     </div>
 

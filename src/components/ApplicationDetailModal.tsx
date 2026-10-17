@@ -656,6 +656,8 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
                         ? 'Ret Maili Başarıyla İletildi!'
                         : decision === 'waitlist'
                         ? 'Waitlist Maili Başarıyla İletildi!'
+                        : isChairboard
+                        ? 'Chairboard Onay Maili Başarıyla İletildi!'
                         : 'Onay Maili Başarıyla İletildi!'}
                     </h3>
                     <p className="text-slate-300 text-xs mt-1 max-w-md">
@@ -673,6 +675,8 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
                           ? 'Reddedildi'
                           : decision === 'waitlist'
                           ? 'Waitlist (Yedek)'
+                          : isChairboard
+                          ? 'Chairboard Olarak Onaylandı'
                           : 'Onaylandı'}
                       </span>{' '}
                       olarak kaydedildi.
@@ -748,7 +752,7 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
                         }`}
                       >
                         <CheckCircle2 size={15} className={decision === 'approval' ? 'text-emerald-400' : 'text-slate-400'} />
-                        <span>Onay Maili</span>
+                        <span>{isChairboard ? 'Chairboard Onayı' : 'Onay Maili'}</span>
                       </button>
 
                       <button
@@ -779,9 +783,9 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
                     </div>
 
                     {decision === 'approval' && isChairboard && (
-                      <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-300 flex items-center gap-2">
-                        <Award size={14} className="shrink-0 text-amber-400" />
-                        <span>Bu aday bir <strong>Chairboard</strong> adayıdır. Şablon otomatik olarak <strong>Delege Teklifi ve Onay</strong> metni ile hazırlanmıştır.</span>
+                      <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-[11px] text-emerald-300 flex items-center gap-2">
+                        <CheckCircle2 size={14} className="shrink-0 text-emerald-400" />
+                        <span>Adayın <strong>Chairboard</strong> başvurusu ONAYLANMAKTADIR. Şablon <em>"your Chairboard application has been approved"</em> olarak hazırlanmıştır.</span>
                       </div>
                     )}
                   </div>
@@ -859,7 +863,7 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
                 className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-xs font-semibold text-emerald-300 transition-all cursor-pointer shadow-md"
               >
                 <CheckCircle2 size={14} className="text-emerald-400" />
-                <span>Onay Maili Gönder</span>
+                <span>{isChairboard ? 'Chairboard Onayı Gönder' : 'Onay Maili Gönder'}</span>
               </button>
 
               <button
@@ -937,7 +941,9 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
                     <Send size={14} />
                     <span>
                       {decision === 'approval'
-                        ? 'Onayla & Gönder (API)'
+                        ? isChairboard
+                          ? 'Chairboard Olarak Onayla (API)'
+                          : 'Onayla & Gönder (API)'
                         : decision === 'waitlist'
                         ? "Waitlist'e Al & Gönder (API)"
                         : 'Reddet & Gönder (API)'}

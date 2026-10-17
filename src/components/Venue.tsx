@@ -27,7 +27,7 @@ export const Venue: React.FC = () => {
               THE IMPERIAL <span className="flame-gradient-text">CONGRESS PALACE</span>
             </h2>
             <p className="text-sm sm:text-base text-slate-400 mt-2 max-w-2xl font-sans">
-              Set along the historic Bosphorus coastline where two continents converge, offering delegates an unforgettable backdrop of diplomatic grandeur and acoustic majesty.
+              Set along the historic Aegean coastline where commerce and culture converge, offering delegates an unforgettable backdrop of diplomatic grandeur and acoustic majesty.
             </p>
           </div>
 
@@ -44,7 +44,7 @@ export const Venue: React.FC = () => {
           <div className="relative aspect-[16/9] md:aspect-[21/9] w-full overflow-hidden bg-[#0c0c14]">
             <img
               src="/venue.jpg"
-              alt="The Imperial Congress Palace, Istanbul"
+              alt="The Imperial Congress Palace, Izmir"
               className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-1000"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#09090f] via-[#09090f]/40 to-transparent" />
@@ -53,7 +53,7 @@ export const Venue: React.FC = () => {
               <div className="bg-black/60 backdrop-blur-md p-4 sm:p-5 rounded-xl border border-white/10 max-w-xl">
                 <div className="flex items-center gap-2 text-amber-400 text-xs font-mono mb-1">
                   <MapPin className="w-3.5 h-3.5" />
-                  <span>DOLMABAHÇE AVENUE, BEŞİKTAŞ, ISTANBUL</span>
+                  <span>ALSANCAK, KONAK, İZMİR</span>
                 </div>
                 <h3 className="font-serif text-xl sm:text-2xl font-bold text-white">
                   Historic Waterfront Plenary & Chambers
@@ -105,7 +105,7 @@ export const Venue: React.FC = () => {
             <div>
               <h5 className="font-serif text-base font-bold text-white mb-1">Airport Transit</h5>
               <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                Direct Havaist shuttles from Istanbul Airport (IST) and Sabiha Gökçen (SAW) directly to Beşiktaş central hub.
+                Direct Havaş shuttles from İzmir Adnan Menderes Airport (ADB) directly to Alsancak central hub.
               </p>
             </div>
           </div>
@@ -117,7 +117,7 @@ export const Venue: React.FC = () => {
             <div>
               <h5 className="font-serif text-base font-bold text-white mb-1">Diplomatic Hotel Deals</h5>
               <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                Partner rates at five-star Bosphorus hotels within 5 minutes walking distance from the plenary grounds.
+                Partner rates at five-star Aegean waterfront hotels within 5 minutes walking distance from the plenary grounds.
               </p>
             </div>
           </div>

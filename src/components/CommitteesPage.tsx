@@ -232,23 +232,26 @@ export const CommitteesPage: React.FC<CommitteesPageProps> = ({
                     e.stopPropagation();
                     setSelectedPosterCommittee(committee);
                   }}
-                  className="relative my-2 w-full flex-1 min-h-[140px] max-h-[250px] rounded-xl overflow-hidden border border-white/10 bg-[#06060c] group flex items-center justify-center cursor-pointer shrink"
+                  className="relative my-2 w-full flex-1 min-h-[160px] max-h-[290px] sm:max-h-[310px] rounded-xl overflow-hidden border border-white/10 bg-[#06060c] group flex items-center justify-center cursor-pointer shrink p-1"
                   title="Click to view full official poster"
                 >
                   <img
                     src={committee.image}
                     alt=""
                     aria-hidden="true"
-                    className="absolute inset-0 w-full h-full object-cover filter blur-md scale-110 opacity-35 pointer-events-none"
+                    className="absolute inset-0 w-full h-full object-cover filter blur-2xl scale-125 opacity-25 pointer-events-none"
                   />
                   <img
                     src={committee.image}
                     alt={committee.name}
-                    className="relative z-10 max-h-full max-w-full object-contain object-center transition-transform duration-700 group-hover:scale-105 drop-shadow-[0_6px_20px_rgba(0,0,0,0.8)]"
+                    className="relative z-10 max-h-full max-w-full w-auto h-auto object-contain object-center transition-transform duration-700 group-hover:scale-105 drop-shadow-[0_8px_25px_rgba(0,0,0,0.85)]"
+                    style={{
+                      maxHeight: '100%',
+                      maxWidth: '100%'
+                    }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/10 pointer-events-none z-10" />
                   
-                  <div className="absolute bottom-2 left-2 sm:bottom-2.5 sm:left-2.5 px-2.5 sm:px-3 py-1 rounded-md bg-black/80 backdrop-blur-md border border-white/15 text-[10px] sm:text-[11px] font-mono text-amber-300 flex items-center gap-1.5 shadow-lg z-20">
+                  <div className="absolute bottom-2 right-2 sm:bottom-2.5 sm:right-2.5 px-2.5 sm:px-3 py-1 rounded-md bg-black/80 backdrop-blur-md border border-white/15 text-[10px] sm:text-[11px] font-mono text-amber-300 flex items-center gap-1.5 shadow-lg z-20">
                     <Flame className="w-3.5 h-3.5 text-orange-400" />
                     <span>{committee.flameFocus}</span>
                   </div>

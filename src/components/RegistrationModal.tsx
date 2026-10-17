@@ -71,7 +71,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                   Delegate Accreditation Application
                 </h3>
                 <p className="text-xs text-slate-400 font-mono">
-                  MSEMUN XXVI • ISTANBUL 2026
+                  MSEMUN XXVI • İZMİR 2026
                 </p>
               </div>
             </div>

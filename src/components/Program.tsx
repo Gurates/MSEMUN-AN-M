@@ -80,7 +80,7 @@ export const Program: React.FC = () => {
             </div>
           </div>
           <span className="text-xs font-mono text-slate-500 tracking-wider">
-            ALL TIMES UTC+3 (ISTANBUL LOCAL TIME)
+            ALL TIMES UTC+3 (İZMİR LOCAL TIME)
           </span>
         </div>
 
