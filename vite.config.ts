@@ -15,7 +15,9 @@ function emailApiPlugin(env: Record<string, string>): Plugin {
         }
         const origin = (req.headers['origin'] || req.headers['referer'] || '') as string;
         const host = (req.headers['host'] || '') as string;
-        if (origin && host && !origin.includes(host)) {
+        const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
+        const isOriginLocal = origin.includes('localhost') || origin.includes('127.0.0.1');
+        if (origin && host && !origin.includes(host) && !(isLocalhost && isOriginLocal)) {
           res.statusCode = 403;
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({ error: 'Forbidden: Cross-origin relay disallowed' }));
