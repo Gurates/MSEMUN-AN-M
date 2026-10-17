@@ -16,14 +16,14 @@ import {
   ArrowLeft,
   CheckCircle2,
   Clock,
-  Sparkles
+  XCircle
 } from 'lucide-react';
 import { PageView } from './Navbar';
 import { ApplicationDetailModal } from './ApplicationDetailModal';
-import { getApprovedMap } from '../lib/approvalStore';
+import { getApprovedMap, ApplicationStatus } from '../lib/approvalStore';
 
 type TabType = 'all' | 'registrations' | 'delegations' | 'chairboard_apps' | 'admin_apps' | 'press_apps';
-type StatusFilterType = 'all' | 'pending' | 'approved';
+type StatusFilterType = 'all' | 'pending' | 'approved' | 'waitlist' | 'rejected';
 
 interface AdminDashboardProps {
   onNavigate?: (page: PageView) => void;
@@ -39,7 +39,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   const [statusFilter, setStatusFilter] = useState<StatusFilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [activeApp, setActiveApp] = useState<{ item: any; tab: 'details' | 'email' } | null>(null);
+  const [activeApp, setActiveApp] = useState<{
+    item: any;
+    tab: 'details' | 'email';
+    decision?: 'approval' | 'rejection' | 'waitlist';
+  } | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -152,22 +156,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     }
   };
 
-  const handleApprovalSuccess = (updatedId: string) => {
+  const handleApprovalSuccess = (
+    updatedId: string,
+    status: ApplicationStatus = 'approved'
+  ) => {
     setData(prev => {
       const next = { ...prev };
       for (const key of Object.keys(next)) {
         next[key] = next[key].map(item =>
-          item.id === updatedId ? { ...item, status: 'approved', isApproved: true } : item
+          item.id === updatedId
+            ? { ...item, status, isApproved: status === 'approved' }
+            : item
         );
       }
       return next;
     });
 
     if (activeApp && activeApp.item.id === updatedId) {
-      setActiveApp(prev => prev ? {
-        ...prev,
-        item: { ...prev.item, status: 'approved', isApproved: true }
-      } : null);
+      setActiveApp(prev =>
+        prev
+          ? {
+              ...prev,
+              item: { ...prev.item, status, isApproved: status === 'approved' }
+            }
+          : null
+      );
     }
   };
 
@@ -203,15 +216,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       }));
     }
 
-    currentData = currentData.map(item => ({
-      ...item,
-      isApproved: item.status === 'approved' || !!approvedMap[item.id]
-    }));
+    currentData = currentData.map(item => {
+      const stored = approvedMap[item.id];
+      const effStatus = stored?.status || item.status || 'pending';
+      return {
+        ...item,
+        status: effStatus,
+        isApproved: effStatus === 'approved'
+      };
+    });
 
     if (statusFilter === 'approved') {
-      currentData = currentData.filter(item => item.isApproved);
+      currentData = currentData.filter(item => item.status === 'approved');
+    } else if (statusFilter === 'waitlist') {
+      currentData = currentData.filter(item => item.status === 'waitlist');
+    } else if (statusFilter === 'rejected') {
+      currentData = currentData.filter(item => item.status === 'rejected');
     } else if (statusFilter === 'pending') {
-      currentData = currentData.filter(item => !item.isApproved);
+      currentData = currentData.filter(item => !item.status || item.status === 'pending');
     }
 
     if (!searchQuery.trim()) return currentData;
@@ -241,9 +263,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     ];
   }, [data]);
 
-  const approvedCount = useMemo(() => {
+  const statusStats = useMemo(() => {
     const approvedMap = getApprovedMap();
-    return allApplications.filter(i => i.status === 'approved' || !!approvedMap[i.id]).length;
+    let approved = 0;
+    let waitlist = 0;
+    let rejected = 0;
+    let pending = 0;
+
+    for (const item of allApplications) {
+      const stored = approvedMap[item.id];
+      const eff = stored?.status || item.status || 'pending';
+      if (eff === 'approved') approved++;
+      else if (eff === 'waitlist') waitlist++;
+      else if (eff === 'rejected') rejected++;
+      else pending++;
+    }
+
+    return { approved, waitlist, rejected, pending };
   }, [allApplications]);
 
   const exportToCSV = () => {
@@ -445,7 +481,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <div className="p-4 rounded-xl bg-[#0c0c14]/90 border border-white/10 flex items-center justify-between">
             <div>
               <div className="text-[11px] font-mono uppercase text-slate-400">Toplam Başvuru</div>
@@ -459,36 +495,40 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
           <div className="p-4 rounded-xl bg-[#0c0c14]/90 border border-emerald-500/30 flex items-center justify-between shadow-lg shadow-emerald-500/5">
             <div>
               <div className="text-[11px] font-mono uppercase text-emerald-400 font-semibold">Onaylananlar</div>
-              <div className="text-2xl font-bold text-emerald-300 font-mono mt-0.5">{approvedCount}</div>
+              <div className="text-2xl font-bold text-emerald-300 font-mono mt-0.5">{statusStats.approved}</div>
             </div>
             <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
               <CheckCircle2 size={20} />
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-[#0c0c14]/90 border border-amber-500/30 flex items-center justify-between shadow-lg shadow-amber-500/5">
+          <div className="p-4 rounded-xl bg-[#0c0c14]/90 border border-purple-500/30 flex items-center justify-between shadow-lg shadow-purple-500/5">
             <div>
-              <div className="text-[11px] font-mono uppercase text-amber-400 font-semibold">Beklemede</div>
-              <div className="text-2xl font-bold text-amber-300 font-mono mt-0.5">
-                {Math.max(0, allApplications.length - approvedCount)}
-              </div>
+              <div className="text-[11px] font-mono uppercase text-purple-400 font-semibold">Waitlist (Yedek)</div>
+              <div className="text-2xl font-bold text-purple-300 font-mono mt-0.5">{statusStats.waitlist}</div>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+            <div className="w-10 h-10 rounded-lg bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
               <Clock size={20} />
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-[#0c0c14]/90 border border-white/10 flex items-center justify-between">
+          <div className="p-4 rounded-xl bg-[#0c0c14]/90 border border-rose-500/30 flex items-center justify-between shadow-lg shadow-rose-500/5">
             <div>
-              <div className="text-[11px] font-mono uppercase text-slate-400">Onay Oranı</div>
-              <div className="text-2xl font-bold text-white font-mono mt-0.5">
-                {allApplications.length > 0
-                  ? `${Math.round((approvedCount / allApplications.length) * 100)}%`
-                  : '0%'}
-              </div>
+              <div className="text-[11px] font-mono uppercase text-rose-400 font-semibold">Reddedilenler</div>
+              <div className="text-2xl font-bold text-rose-300 font-mono mt-0.5">{statusStats.rejected}</div>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
+              <XCircle size={20} />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-[#0c0c14]/90 border border-amber-500/30 flex items-center justify-between shadow-lg shadow-amber-500/5">
+            <div>
+              <div className="text-[11px] font-mono uppercase text-amber-400 font-semibold">Beklemede</div>
+              <div className="text-2xl font-bold text-amber-300 font-mono mt-0.5">{statusStats.pending}</div>
             </div>
             <div className="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-              <Sparkles size={20} />
+              <Clock size={20} />
             </div>
           </div>
         </div>
@@ -541,7 +581,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
               />
             </div>
 
-            <div className="flex items-center gap-1 p-1 rounded-lg bg-black/40 border border-white/10 shrink-0">
+            <div className="flex flex-wrap items-center gap-1 p-1 rounded-lg bg-black/40 border border-white/10 shrink-0">
               <button
                 type="button"
                 onClick={() => setStatusFilter('all')}
@@ -562,7 +602,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Beklemede
+                Beklemede ({statusStats.pending})
               </button>
               <button
                 type="button"
@@ -573,7 +613,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Onaylananlar
+                Onaylananlar ({statusStats.approved})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('waitlist')}
+                className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+                  statusFilter === 'waitlist'
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30 font-semibold'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Waitlist ({statusStats.waitlist})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('rejected')}
+                className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+                  statusFilter === 'rejected'
+                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 font-semibold'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Reddedilenler ({statusStats.rejected})
               </button>
             </div>
           </div>
@@ -622,8 +684,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                   </tr>
                 ) : (
                   filteredData.map((item: any) => {
-                    const approved = item.isApproved;
-
                     return (
                       <tr
                         key={item.id}
@@ -668,10 +728,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
 
                         {/* Durum Rozeti */}
                         <td className="px-4 py-3 text-center">
-                          {approved ? (
+                          {item.status === 'approved' ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                               <CheckCircle2 size={11} />
                               <span>Onaylandı</span>
+                            </span>
+                          ) : item.status === 'waitlist' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/30">
+                              <Clock size={11} />
+                              <span>Waitlist</span>
+                            </span>
+                          ) : item.status === 'rejected' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                              <XCircle size={11} />
+                              <span>Reddedildi</span>
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
@@ -701,16 +771,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
 
                             <button
                               type="button"
-                              onClick={() => setActiveApp({ item, tab: 'email' })}
-                              className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
-                                approved
-                                  ? 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
+                              onClick={() => setActiveApp({
+                                item,
+                                tab: 'email',
+                                decision: item.status === 'waitlist' ? 'waitlist' : item.status === 'rejected' ? 'rejection' : 'approval'
+                              })}
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
+                                item.status === 'approved'
+                                  ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30'
+                                  : item.status === 'waitlist'
+                                  ? 'bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30'
+                                  : item.status === 'rejected'
+                                  ? 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30'
                                   : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 shadow-sm'
                               }`}
-                              title={approved ? 'Onay mailini tekrar görüntüle / gönder' : 'Onay maili hazırla ve gönder'}
+                              title="E-posta hazırla ve gönder (Onay / Waitlist / Ret)"
                             >
-                              <Mail size={12} className={approved ? 'text-slate-400' : 'text-amber-400'} />
-                              <span className="hidden sm:inline">{approved ? 'Mail' : 'Onayla'}</span>
+                              <Mail size={12} className={item.status === 'approved' ? 'text-emerald-400' : item.status === 'waitlist' ? 'text-purple-400' : item.status === 'rejected' ? 'text-rose-400' : 'text-amber-400'} />
+                              <span>Mail Gönder</span>
                             </button>
                           </div>
                         </td>
@@ -733,6 +811,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
           item={activeApp.item}
           tableName={activeApp.item._table}
           initialTab={activeApp.tab}
+          initialDecision={activeApp.decision}
           onClose={() => setActiveApp(null)}
           onSuccess={handleApprovalSuccess}
         />

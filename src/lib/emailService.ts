@@ -1,9 +1,9 @@
-import { CONFERENCE_INFO } from '../data/conferenceData';
+export type EmailDecision = 'approval' | 'rejection' | 'waitlist';
 
 export interface EmailParams {
   name: string;
   recipientEmail: string;
-  role: string;
+  role?: string;
   school?: string;
   committee?: string;
   senderEmail?: string;
@@ -17,6 +17,7 @@ export interface SendEmailPayload {
   html: string;
   senderEmail?: string;
   senderName?: string;
+  decision?: EmailDecision;
 }
 
 export interface SendResult {
@@ -28,97 +29,160 @@ export interface SendResult {
 }
 
 export const getSenderEmail = (): string => {
-  return import.meta.env.VITE_SENDER_EMAIL || 'secretariat@msemun.org';
+  return import.meta.env.VITE_SENDER_EMAIL || 'msemun26@gmail.com';
 };
 
 export const getSenderName = (): string => {
   return import.meta.env.VITE_SENDER_NAME || 'MSEMUN Secretariat';
 };
 
-export const getDefaultSubject = (name: string, _role: string = 'Delege'): string => {
-  return `MSEMUN 2026 — Başvurunuz Onaylandı! (${name})`;
+/**
+ * 1. ONAY MAİLİ ŞABLONU (Approval)
+ * - Standart (Delege vb.) veya Chairboard için özelleştirilmiş
+ */
+export const generateApprovalTemplate = (params: EmailParams, isChairboard: boolean = false): string => {
+  const { name, role = 'Delegate' } = params;
+  const applicantName = name ? name.trim() : 'Applicant';
+
+  if (isChairboard) {
+    return `Dear ${applicantName},
+
+Thank you for your interest in applying for a Chairboard position at MSEMUN'26.
+
+We regret to inform you that your Chairboard application has not been accepted following a thorough review process conducted by our Secretariat.
+
+However, we are pleased to offer you the opportunity to participate in MSEMUN'26 as a Delegate. We would be delighted to welcome you to our conference in this capacity.
+
+To complete your registration, we kindly request a payment of ... TL to the bank account provided below by .... This fee includes the welcome pack, meals, desserts, beverages, and other conference amenities.
+Account Name:
+Account Holder:
+IBAN:
+Description: Your Name – Delegate – Donation
+Description Example: ${applicantName} – Delegate – Donation
+
+After completing the payment, please reply to this email with the receipt attached before the deadline. Your registration will not be completed unless the receipt is submitted on time.
+•Please be aware that all payments are non-refundable.
+
+Should you have any questions or require further assistance, please do not hesitate to contact us.
+
+Bade Kızılgün: +90 552 578 31 37
+Lâl Çarıkoğlu: +90 532 364 70 06
+
+Instagram: @msemun2026
+
+Best Regards,
+MSEMUN'26 Public Relations Team`;
+  }
+
+  return `Dear ${applicantName},
+
+We are very pleased with your interest in being part of the MSEMUN'26. Following a long review process by our Secretariat, we are thrilled to inform you that your ${role} application has been approved. 
+
+To complete your registration, we kindly request a payment of ... TL to the bank account provided below until .... This fee is inclusive of the welcome pack, meals, desserts, beverages etc. 
+
+Account Name: 
+Account Holder:
+IBAN:
+Description: Your Name - Position - Donation
+Description Example: ${applicantName} - ${role} - Donation
+
+After completing the payment, please reply to this email with the receipt before the deadline. Your registration will not be completed if you do not include the receipt. 
+- Please be aware that all payments are non-refundable.
+
+Should you have any questions or require further assistance, please do not hesitate to contact us.
+
+Bade Kızılgün: +90 552 578 31 37
+Lâl Çarıkoğlu: +90 532 364 70 06
+
+Instagram: @msemun2026
+
+Best Regards,
+MSEMUN'26 Public Relations Team`;
+};
+
+/**
+ * 2. RET MAİLİ ŞABLONU (Rejection)
+ */
+export const generateRejectionTemplate = (params: EmailParams): string => {
+  const { name } = params;
+  const applicantName = name ? name.trim() : 'Applicant';
+
+  return `Dear ${applicantName},
+
+Thank you for your interest in participating in MSEMUN'26.
+
+We regret to inform you that your application for MSEMUN'26 has not been accepted following a thorough rewiev process conducted by our Secretariat.
+
+Should you have any questions or require further assistance, please do not hesitate to contact us.
+
+Bade Kızılgün: +90 552 578 31 37
+Lâl Çarıkoğlu: +90 532 364 70 06
+
+Instagram: @msemun2026
+
+Best Regards,
+MSEMUN'26 Public Relations Team`;
+};
+
+/**
+ * 3. WAITLIST MAİLİ ŞABLONU (Waiting List)
+ */
+export const generateWaitlistTemplate = (params: EmailParams): string => {
+  const { name, role = 'Delegate' } = params;
+  const applicantName = name ? name.trim() : 'Applicant';
+
+  return `Dear ${applicantName},
+
+Thank you for your interest in participating in MSEMUN'26.
+
+Following a thorough review process conducted by our Secretariat, we would like to inform you that your application has been placed on the waiting list.
+
+Please note that if a ${role} position becomes available, we will contact you regarding the possibility of participating in MSEMUN'26.
+
+Should you have any questions or require further assistance, please do not hesitate to contact us.
+
+ Bade Kızılgün: +90 552 578 31 37
+ Lâl Çarıkoğlu: +90 532 364 70 06
+
+Instagram: @msemun2026
+
+Best Regards, 
+MSEMUN'26 Public Relations Team`;
+};
+
+/**
+ * Karara göre varsayılan konu başlığı
+ */
+export const getSubjectForDecision = (
+  decision: EmailDecision,
+  name: string,
+  role: string = 'Delegate',
+  isChairboard: boolean = false
+): string => {
+  const safeName = name ? name.trim() : 'Applicant';
+  if (decision === 'rejection') {
+    return `MSEMUN'26 — Application Status (${safeName})`;
+  }
+  if (decision === 'waitlist') {
+    return `MSEMUN'26 — Waiting List Status (${safeName})`;
+  }
+  if (isChairboard) {
+    return `MSEMUN'26 — Application Status Update (${safeName})`;
+  }
+  return `MSEMUN'26 — ${role} Application Approved! (${safeName})`;
+};
+
+// Geriye dönük uyumluluk takma adları
+export const getDefaultSubject = (name: string, role: string = 'Delegate'): string => {
+  return getSubjectForDecision('approval', name, role);
 };
 
 export const generateTurkishTemplate = (params: EmailParams): string => {
-  const {
-    name,
-    role,
-    school = '—',
-    committee = 'Atanan Komite / Alan',
-    senderEmail = getSenderEmail()
-  } = params;
-
-  return `Sayın ${name},
-
-MSEMUN 2026 (${role}) başvurunuz Değerlendirme ve Seçici Kurulumuz tarafından titizlikle incelenmiş olup ONAYLANMIŞTIR.
-
-Model Birleşmiş Milletler vizyonumuzu paylaşacak ve münazara masalarında küresel sorunlara diplomatik çözümler üretecek seçkin katılımcılarımız arasında yer almanızdan büyük mutluluk duyuyoruz.
-
-BAŞVURU VE KATILIM BİLGİLERİ:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Katılımcı Adı: ${name}
-• Başvuru Kategorisi: ${role}
-• Okul / Kurum: ${school || 'Belirtilmedi'}
-• Komite / Görev Alanı: ${committee || 'Belirtilmedi'}
-
-KONFERANS DETAYLARI:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Konferans: MSEMUN 2026 (XXVI Edition)
-• Tarih: ${CONFERENCE_INFO.dates || '24 – 26 Ekim 2026'}
-• Konum: ${CONFERENCE_INFO.location || 'İstanbul, Türkiye'}
-
-ÖNEMLİ HATIRLATMALAR VE SONRAKİ ADIMLAR:
-1. Komite çalışma kılavuzları (Study Guides), prosedür rehberi ve pozisyon belgesi (Position Paper) teslim tarihleri önümüzdeki günlerde bu e-posta adresi üzerinden paylaşılacaktır.
-2. Konferans hazırlık sürecinde delegasyon bilgilendirme duyuruları için e-posta kutunuzu ve web sitemizi düzenli kontrol etmenizi tavsiye ederiz.
-3. Her türlü soru, geri bildirim veya komite danışma talebiniz için doğrudan bu e-postayı yanıtlayabilir ya da ${senderEmail} adresinden bizimle iletişime geçebilirsiniz.
-
-MSEMUN 2026'da diplomasi meşalesini birlikte yakmak dileğiyle!
-
-Saygılarımızla,
-MSEMUN 2026 Genel Sekreterliği & Organizasyon Komitesi
-E-posta: ${senderEmail}
-Web: https://msemun.org`;
+  return generateApprovalTemplate(params, params.role === 'Chairboard');
 };
 
 export const generateEnglishTemplate = (params: EmailParams): string => {
-  const {
-    name,
-    role,
-    school = '—',
-    committee = 'Allocated Committee',
-    senderEmail = getSenderEmail()
-  } = params;
-
-  return `Dear ${name},
-
-We are pleased to inform you that your application for MSEMUN 2026 (${role}) has been reviewed by the Executive Committee and officially APPROVED.
-
-We are honored to welcome you as a distinguished participant in this year's conference, where the sovereign flame of peace and diplomacy is forged.
-
-APPLICATION & PARTICIPATION DETAILS:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Participant: ${name}
-• Role / Category: ${role}
-• School / Institution: ${school || 'N/A'}
-• Committee / Chamber: ${committee || 'N/A'}
-
-CONFERENCE LOGISTICS:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Conference: MSEMUN 2026 (XXVI Edition)
-• Dates: ${CONFERENCE_INFO.dates || 'December 04 – 06, 2026'}
-• Venue: ${CONFERENCE_INFO.location || 'The Imperial Congress Palace, Istanbul'}
-
-NEXT STEPS & PREPARATION:
-1. Committee Study Guides, Rules of Procedure (RoP), and Position Paper submission deadlines will be distributed via this email address.
-2. Please check your inbox and our official conference portal regularly for logistical and preparatory announcements.
-3. For inquiries, committee changes, or assistance, reply to this email or reach us at ${senderEmail}.
-
-Welcome to the MSEMUN 2026 family!
-
-Warm regards,
-MSEMUN 2026 Secretariat & Organizing Committee
-Email: ${senderEmail}
-Web: https://msemun.org`;
+  return generateApprovalTemplate(params, params.role === 'Chairboard');
 };
 
 export const escapeHtml = (str: string): string => {
@@ -130,29 +194,54 @@ export const escapeHtml = (str: string): string => {
     .replace(/'/g, '&#039;');
 };
 
-export const generateHtmlTemplate = (textBody: string, _name?: string): string => {
+export const generateHtmlTemplate = (
+  textBody: string,
+  _name?: string,
+  decision: EmailDecision = 'approval'
+): string => {
   const safeText = escapeHtml(textBody || '');
   const formattedBody = safeText
     .replace(/\n\n/g, '</p><p style="margin: 0 0 16px 0; color: #cbd5e1; line-height: 1.65; font-size: 14px;">')
     .replace(/\n/g, '<br/>')
     .replace(/━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━/g, '<hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.15); margin: 16px 0;" />');
 
+  const title =
+    decision === 'rejection'
+      ? 'Application Status'
+      : decision === 'waitlist'
+      ? 'Waiting List Notice'
+      : 'Application Approved';
+
+  const badgeColor =
+    decision === 'rejection'
+      ? 'background-color: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.35); color: #fb7185;'
+      : decision === 'waitlist'
+      ? 'background-color: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.35); color: #c084fc;'
+      : 'background-color: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); color: #fbbf24;';
+
+  const borderColor =
+    decision === 'rejection'
+      ? 'rgba(244, 63, 94, 0.25)'
+      : decision === 'waitlist'
+      ? 'rgba(168, 85, 247, 0.25)'
+      : 'rgba(245, 158, 11, 0.25)';
+
   return `<!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MSEMUN 2026 Başvuru Onayı</title>
+  <title>MSEMUN'26 — ${title}</title>
 </head>
 <body style="margin: 0; padding: 24px 12px; background-color: #060608; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f8fafc;">
-  <div style="max-width: 620px; margin: 0 auto; background-color: #0c0c14; border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 14px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.8);">
+  <div style="max-width: 620px; margin: 0 auto; background-color: #0c0c14; border: 1px solid ${borderColor}; border-radius: 14px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.8);">
     
     <div style="background: linear-gradient(135deg, #131320 0%, #1f1b2e 100%); padding: 32px 28px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);">
-      <div style="display: inline-block; padding: 4px 12px; background-color: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 20px; color: #fbbf24; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px;">
+      <div style="display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; ${badgeColor}">
         Secretariat Notice • MSEMUN '26
       </div>
       <h1 style="margin: 0 0 8px 0; font-size: 26px; font-weight: 800; color: #ffffff; letter-spacing: -0.02em;">
-        Başvurunuz Onaylandı
+        ${title}
       </h1>
       <p style="margin: 0; font-size: 13px; color: #94a3b8; font-style: italic;">
         "In the crucible of debate, the sovereign flame of peace is forged."
@@ -248,6 +337,6 @@ export const sendEmailViaApi = async (payload: SendEmailPayload): Promise<SendRe
   return {
     success: false,
     notConfigured: true,
-    message: 'E-posta servisi (SMTP veya Resend) henüz yapılandırılmamış. Gmail ile tek tıkla açıp gönderebilirsiniz.'
+    message: 'E-posta gönderim yapılandırması bulunamadı.'
   };
 };

@@ -22,35 +22,44 @@ import {
   MessageSquare,
   Camera,
   Users,
-  ChevronRight
+  ChevronRight,
+  XCircle
 } from 'lucide-react';
 import {
   EmailParams,
-  generateTurkishTemplate,
-  generateEnglishTemplate,
+  EmailDecision,
+  generateApprovalTemplate,
+  generateRejectionTemplate,
+  generateWaitlistTemplate,
   generateHtmlTemplate,
-  getDefaultSubject,
+  getSubjectForDecision,
   getSenderEmail,
   getSenderName,
   openInGmail,
   openInMailto,
   sendEmailViaApi
 } from '../lib/emailService';
-import { markApplicationApproved, isApplicationApproved } from '../lib/approvalStore';
+import {
+  markApplicationStatus,
+  getApplicationStatus,
+  ApplicationStatus
+} from '../lib/approvalStore';
 import { supabase } from '../lib/supabase';
 
 interface ApplicationDetailModalProps {
   item: any;
   tableName?: string;
   initialTab?: 'details' | 'email';
+  initialDecision?: EmailDecision;
   onClose: () => void;
-  onSuccess: (updatedId: string) => void;
+  onSuccess: (updatedId: string, status?: ApplicationStatus) => void;
 }
 
 export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
   item,
   tableName = 'registrations',
   initialTab = 'details',
+  initialDecision = 'approval',
   onClose,
   onSuccess
 }) => {
@@ -67,10 +76,14 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
     item.pref1 ||
     (item.app_type === 'Delegation' ? 'Delegasyon Grubu' : item.app_type || 'Genel Kurul');
 
-  const approved = item.isApproved || isApplicationApproved(item.id, item.status);
+  const currentStatus = getApplicationStatus(item.id, item.status);
+  const isChairboard =
+    item._table === 'chairboard_apps' ||
+    item.app_type === 'Chairboard' ||
+    /chair/i.test(applicantRole);
 
-  // Email state
-  const [language, setLanguage] = useState<'tr' | 'en'>('tr');
+  // Email decision state: 'approval' | 'rejection' | 'waitlist'
+  const [decision, setDecision] = useState<EmailDecision>(initialDecision);
   const [subject, setSubject] = useState<string>('');
   const [body, setBody] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
@@ -92,17 +105,19 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
       senderName
     };
 
-    const initialSubject = language === 'tr'
-      ? getDefaultSubject(applicantName, applicantRole)
-      : `MSEMUN 2026 — Application Approved! (${applicantName})`;
-
-    const initialBody = language === 'tr'
-      ? generateTurkishTemplate(params)
-      : generateEnglishTemplate(params);
+    const initialSubject = getSubjectForDecision(decision, applicantName, applicantRole, isChairboard);
+    let initialBody = '';
+    if (decision === 'approval') {
+      initialBody = generateApprovalTemplate(params, isChairboard);
+    } else if (decision === 'waitlist') {
+      initialBody = generateWaitlistTemplate(params);
+    } else {
+      initialBody = generateRejectionTemplate(params);
+    }
 
     setSubject(initialSubject);
     setBody(initialBody);
-  }, [language, applicantName, applicantEmail, applicantRole, applicantSchool, applicantCommittee, senderEmail, senderName]);
+  }, [decision, applicantName, applicantEmail, applicantRole, applicantSchool, applicantCommittee, senderEmail, senderName, isChairboard]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(body);
@@ -111,13 +126,20 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
   };
 
   const completeApprovalFlow = async (_note: string) => {
-    markApplicationApproved(item.id, applicantEmail, senderEmail);
+    const statusMap: Record<EmailDecision, ApplicationStatus> = {
+      approval: 'approved',
+      rejection: 'rejected',
+      waitlist: 'waitlist'
+    };
+    const targetStatus = statusMap[decision];
+
+    markApplicationStatus(item.id, applicantEmail, senderEmail, targetStatus);
 
     try {
       const resolvedTable = item._table || tableName || 'registrations';
       const { error } = await supabase
         .from(resolvedTable)
-        .update({ status: 'approved' })
+        .update({ status: targetStatus })
         .eq('id', item.id);
 
       if (error) {
@@ -127,7 +149,7 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
       console.warn('Supabase update attempt:', e);
     }
 
-    onSuccess(item.id);
+    onSuccess(item.id, targetStatus);
   };
 
   const handleOpenGmail = async () => {
@@ -149,14 +171,15 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
     setSending(true);
     setStatusMessage(null);
 
-    const html = generateHtmlTemplate(body, applicantName);
+    const html = generateHtmlTemplate(body, applicantName, decision);
     const result = await sendEmailViaApi({
       to: applicantEmail,
       subject,
       text: body,
       html,
       senderEmail,
-      senderName
+      senderName,
+      decision
     });
 
     setSending(false);
@@ -236,15 +259,25 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
                   {item.app_type}
                 </span>
 
-                {approved ? (
+                {currentStatus === 'approved' ? (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
                     <CheckCircle2 size={12} />
-                    <span>Onaylandı (Mail Gönderildi)</span>
+                    <span>Onaylandı</span>
+                  </span>
+                ) : currentStatus === 'waitlist' ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                    <Clock size={12} />
+                    <span>Waitlist (Yedek)</span>
+                  </span>
+                ) : currentStatus === 'rejected' ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/20 text-rose-400 border border-rose-500/40">
+                    <XCircle size={12} />
+                    <span>Reddedildi</span>
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40">
                     <Clock size={12} />
-                    <span>Onay Bekliyor</span>
+                    <span>İşlem Bekliyor</span>
                   </span>
                 )}
 
@@ -267,7 +300,7 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
                   className="btn-primary !px-4 !py-2 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-md"
                 >
                   <Mail size={14} />
-                  <span>Onay Maili Gönder</span>
+                  <span>Mail Gönder / Yanıtla</span>
                   <ChevronRight size={14} />
                 </button>
               ) : (
@@ -600,13 +633,49 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
             <div className="space-y-4">
               {sentSuccess ? (
                 <div className="py-12 flex flex-col items-center text-center space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 animate-bounce">
-                    <CheckCircle2 size={36} />
+                  <div
+                    className={`w-16 h-16 rounded-full flex items-center justify-center animate-bounce border ${
+                      decision === 'rejection'
+                        ? 'bg-rose-500/20 border-rose-500/40 text-rose-400'
+                        : decision === 'waitlist'
+                        ? 'bg-purple-500/20 border-purple-500/40 text-purple-300'
+                        : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                    }`}
+                  >
+                    {decision === 'rejection' ? (
+                      <XCircle size={36} />
+                    ) : decision === 'waitlist' ? (
+                      <Clock size={36} />
+                    ) : (
+                      <CheckCircle2 size={36} />
+                    )}
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white">Onay Maili Başarıyla İletildi!</h3>
+                    <h3 className="text-xl font-bold text-white">
+                      {decision === 'rejection'
+                        ? 'Ret Maili Başarıyla İletildi!'
+                        : decision === 'waitlist'
+                        ? 'Waitlist Maili Başarıyla İletildi!'
+                        : 'Onay Maili Başarıyla İletildi!'}
+                    </h3>
                     <p className="text-slate-300 text-xs mt-1 max-w-md">
-                      <span className="text-amber-400 font-semibold">{applicantName}</span> ({applicantEmail}) adlı katılımcının onay maili gönderildi ve başvuru durumu <span className="text-emerald-400 font-semibold">Onaylandı</span> olarak kaydedildi.
+                      <span className="text-amber-400 font-semibold">{applicantName}</span> ({applicantEmail}) adlı katılımcıya e-posta iletildi ve başvuru durumu{' '}
+                      <span
+                        className={`font-semibold ${
+                          decision === 'rejection'
+                            ? 'text-rose-400'
+                            : decision === 'waitlist'
+                            ? 'text-purple-300'
+                            : 'text-emerald-400'
+                        }`}
+                      >
+                        {decision === 'rejection'
+                          ? 'Reddedildi'
+                          : decision === 'waitlist'
+                          ? 'Waitlist (Yedek)'
+                          : 'Onaylandı'}
+                      </span>{' '}
+                      olarak kaydedildi.
                     </p>
                   </div>
                   <div className="flex items-center gap-2 pt-2">
@@ -647,46 +716,74 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
                       </div>
                       <div className="font-semibold text-white truncate text-sm">{senderName}</div>
                       <div className="text-amber-300 font-mono text-[11px] truncate">{senderEmail}</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">.env içindeki VITE_SENDER_EMAIL</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">msemun26@gmail.com (SMTP)</div>
                     </div>
                   </div>
 
-                  {/* Language / Template Tabs */}
-                  <div className="flex items-center justify-between gap-2 pt-1">
-                    <div className="flex items-center gap-1.5 p-1 rounded-lg bg-black/50 border border-white/10">
+                  {/* Decision Selector Tabs: Onay, Waitlist, Ret */}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[11px] font-mono uppercase text-slate-400 font-semibold">
+                        E-posta Şablonu ve Karar Seçimi
+                      </label>
                       <button
                         type="button"
-                        onClick={() => setLanguage('tr')}
-                        className={`px-3 py-1.5 rounded text-xs font-semibold transition-all cursor-pointer ${
-                          language === 'tr'
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                            : 'text-slate-400 hover:text-white'
-                        }`}
+                        onClick={handleCopy}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-slate-300 transition-colors cursor-pointer"
+                        title="Metni Kopyala"
                       >
-                        Türkçe Şablon
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setLanguage('en')}
-                        className={`px-3 py-1.5 rounded text-xs font-semibold transition-all cursor-pointer ${
-                          language === 'en'
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                            : 'text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        English Template
+                        {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                        <span>{copied ? 'Kopyalandı!' : 'Metni Kopyala'}</span>
                       </button>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={handleCopy}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-slate-300 transition-colors cursor-pointer"
-                      title="Metni Kopyala"
-                    >
-                      {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
-                      <span>{copied ? 'Kopyalandı!' : 'Metni Kopyala'}</span>
-                    </button>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setDecision('approval')}
+                        className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                          decision === 'approval'
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-lg shadow-emerald-500/10 ring-1 ring-emerald-500/30'
+                            : 'bg-black/40 text-slate-400 border-white/10 hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        <CheckCircle2 size={15} className={decision === 'approval' ? 'text-emerald-400' : 'text-slate-400'} />
+                        <span>Onay Maili</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setDecision('waitlist')}
+                        className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                          decision === 'waitlist'
+                            ? 'bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-lg shadow-purple-500/10 ring-1 ring-purple-500/30'
+                            : 'bg-black/40 text-slate-400 border-white/10 hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        <Clock size={15} className={decision === 'waitlist' ? 'text-purple-400' : 'text-slate-400'} />
+                        <span>Waitlist Maili</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setDecision('rejection')}
+                        className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                          decision === 'rejection'
+                            ? 'bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-lg shadow-rose-500/10 ring-1 ring-rose-500/30'
+                            : 'bg-black/40 text-slate-400 border-white/10 hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        <XCircle size={15} className={decision === 'rejection' ? 'text-rose-400' : 'text-slate-400'} />
+                        <span>Ret Maili</span>
+                      </button>
+                    </div>
+
+                    {decision === 'approval' && isChairboard && (
+                      <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-300 flex items-center gap-2">
+                        <Award size={14} className="shrink-0 text-amber-400" />
+                        <span>Bu aday bir <strong>Chairboard</strong> adayıdır. Şablon otomatik olarak <strong>Delege Teklifi ve Onay</strong> metni ile hazırlanmıştır.</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Subject Line Input */}
@@ -706,12 +803,12 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
                       <label className="block text-[11px] font-mono uppercase text-slate-400">
-                        Hazırlanmış Şablon İçeriği (İsim otomatik yerleştirildi)
+                        Şablon İçeriği (İsim ve pozisyon otomatik yerleştirildi)
                       </label>
                       <span className="text-[10px] text-amber-400/80 font-mono">Düzenlenebilir</span>
                     </div>
                     <textarea
-                      rows={11}
+                      rows={12}
                       value={body}
                       onChange={(e) => setBody(e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-lg bg-black/50 border border-white/15 text-xs text-slate-200 font-sans leading-relaxed focus:outline-none focus:border-amber-400 resize-y"
@@ -734,7 +831,6 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
                     </div>
                   )}
 
-
                 </>
               )}
             </div>
@@ -753,14 +849,41 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
           </button>
 
           {activeTab === 'details' ? (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={() => setActiveTab('email')}
-                className="btn-primary !px-5 !py-2.5 text-xs font-semibold inline-flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-amber-500/20"
+                onClick={() => {
+                  setDecision('approval');
+                  setActiveTab('email');
+                }}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-xs font-semibold text-emerald-300 transition-all cursor-pointer shadow-md"
               >
-                <Mail size={15} />
-                <span>Bu Başvuruyu Onayla & Mail Gönder ({applicantName})</span>
+                <CheckCircle2 size={14} className="text-emerald-400" />
+                <span>Onay Maili Gönder</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setDecision('waitlist');
+                  setActiveTab('email');
+                }}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 text-xs font-semibold text-purple-300 transition-all cursor-pointer shadow-md"
+              >
+                <Clock size={14} className="text-purple-400" />
+                <span>Waitlist Maili Gönder</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setDecision('rejection');
+                  setActiveTab('email');
+                }}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-xs font-semibold text-rose-300 transition-all cursor-pointer shadow-md"
+              >
+                <XCircle size={14} className="text-rose-400" />
+                <span>Ret Maili Gönder</span>
               </button>
             </div>
           ) : !sentSuccess ? (
@@ -796,17 +919,29 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
                 type="button"
                 onClick={handleSendDirectApi}
                 disabled={sending}
-                className="btn-primary inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-lg transition-all ${
+                  decision === 'rejection'
+                    ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/20'
+                    : decision === 'waitlist'
+                    ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-600/20'
+                    : 'btn-primary'
+                }`}
               >
                 {sending ? (
                   <>
-                    <RefreshCw size={14} className="animate-spin text-amber-400" />
+                    <RefreshCw size={14} className="animate-spin text-white" />
                     <span>Gönderiliyor...</span>
                   </>
                 ) : (
                   <>
                     <Send size={14} />
-                    <span>Otomatik Gönder (API)</span>
+                    <span>
+                      {decision === 'approval'
+                        ? 'Onayla & Gönder (API)'
+                        : decision === 'waitlist'
+                        ? "Waitlist'e Al & Gönder (API)"
+                        : 'Reddet & Gönder (API)'}
+                    </span>
                   </>
                 )}
               </button>
