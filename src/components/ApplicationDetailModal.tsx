@@ -190,7 +190,7 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
     } else if (result.notConfigured) {
       setStatusMessage({
         type: 'info',
-        text: 'Doğrudan otomatik API gönderimi için .env dosyasında SMTP veya Resend API anahtarı tanımlanmalıdır. Aşağıdaki "Gmail ile Aç ve Gönder" tuşuna basarak resmi hesabınızdan hemen gönderebilirsiniz.'
+        text: result.message || 'Doğrudan otomatik API gönderimi için .env dosyasında SMTP veya Resend API anahtarı tanımlanmalıdır. Aşağıdaki "Gmail ile Aç ve Gönder" tuşuna basarak resmi hesabınızdan hemen gönderebilirsiniz.'
       });
     } else {
       setStatusMessage({

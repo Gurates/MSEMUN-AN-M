@@ -58,8 +58,27 @@ export const handler = async (event: any) => {
       };
     }
 
-    const smtpUser = process.env.SMTP_USER;
-    const smtpPass = process.env.SMTP_PASS;
+    const smtpUser =
+      process.env.SMTP_USER ||
+      process.env.VITE_SMTP_USER ||
+      process.env.VITE_SENDER_EMAIL ||
+      process.env.GMAIL_USER ||
+      process.env.EMAIL_USER ||
+      'msemun26@gmail.com';
+
+    const rawPass =
+      process.env.SMTP_PASS ||
+      process.env.SMTP_PASSWORD ||
+      process.env.VITE_SMTP_PASS ||
+      process.env.VITE_SMTP_PASSWORD ||
+      process.env.GMAIL_PASS ||
+      process.env.GMAIL_APP_PASS ||
+      process.env.GMAIL_PASSWORD ||
+      process.env.EMAIL_PASS ||
+      process.env.EMAIL_PASSWORD ||
+      '';
+
+    const cleanPass = rawPass ? rawPass.trim().replace(/\s+/g, '') : '';
     const senderEmail = process.env.VITE_SENDER_EMAIL || smtpUser || 'msemun26@gmail.com';
     const senderName = process.env.VITE_SENDER_NAME || 'MSEMUN Secretariat';
     const resendApiKey = process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY;
@@ -98,8 +117,7 @@ export const handler = async (event: any) => {
     }
 
     // Option 2: Gmail SMTP
-    if (smtpUser && smtpPass) {
-      const cleanPass = smtpPass.replace(/\s+/g, '');
+    if (smtpUser && cleanPass) {
       const isGmail = (process.env.SMTP_HOST || '').includes('gmail') || smtpUser.includes('gmail.com');
 
       const transporter = nodemailer.createTransport(
@@ -138,13 +156,16 @@ export const handler = async (event: any) => {
       };
     }
 
+    const hasUser = !!(process.env.SMTP_USER || process.env.VITE_SMTP_USER || process.env.VITE_SENDER_EMAIL);
+    const hasPass = !!cleanPass;
+
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         success: false,
         notConfigured: true,
-        message: 'SMTP veya Resend API anahtarı Netlify Environment Variables üzerinde tanımlanmamış.'
+        message: `Netlify ortamında e-posta şifresi eksik (Kullanıcı: ${hasUser ? 'Tanımlı' : 'Yok'}, Şifre: ${hasPass ? 'Tanımlı' : 'Eksik'}). Netlify -> Site configuration -> Environment variables sekmesinde SMTP_PASS veya SMTP_PASSWORD değişkeninin "Functions" kapsamında tanımlı olduğundan ve ardından "Trigger deploy" yapıldığından emin olun.`
       })
     };
   } catch (err: any) {

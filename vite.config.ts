@@ -31,6 +31,9 @@ function emailApiPlugin(env: Record<string, string>): Plugin {
 
         req.on('end', async () => {
           try {
+            // Dynamically load fresh .env so modifications take effect immediately without restarting server
+            const freshEnv = { ...env, ...loadEnv('', process.cwd(), '') };
+
             const data = JSON.parse(body || '{}');
             const { to, subject, text, html } = data;
 
@@ -41,11 +44,31 @@ function emailApiPlugin(env: Record<string, string>): Plugin {
               return;
             }
 
-            const senderEmail = env.VITE_SENDER_EMAIL || env.SMTP_USER || 'secretariat@msemun.org';
-            const senderName = env.VITE_SENDER_NAME || 'MSEMUN Secretariat';
-            const resendApiKey = env.RESEND_API_KEY || env.VITE_RESEND_API_KEY;
-            const smtpUser = env.SMTP_USER;
-            const smtpPass = env.SMTP_PASS;
+            const senderEmail = freshEnv.VITE_SENDER_EMAIL || freshEnv.SMTP_USER || 'msemun26@gmail.com';
+            const senderName = freshEnv.VITE_SENDER_NAME || 'MSEMUN Secretariat';
+            const resendApiKey = freshEnv.RESEND_API_KEY || freshEnv.VITE_RESEND_API_KEY;
+
+            const smtpUser =
+              freshEnv.SMTP_USER ||
+              freshEnv.VITE_SMTP_USER ||
+              freshEnv.VITE_SENDER_EMAIL ||
+              freshEnv.GMAIL_USER ||
+              freshEnv.EMAIL_USER ||
+              'msemun26@gmail.com';
+
+            const rawPass =
+              freshEnv.SMTP_PASS ||
+              freshEnv.SMTP_PASSWORD ||
+              freshEnv.VITE_SMTP_PASS ||
+              freshEnv.VITE_SMTP_PASSWORD ||
+              freshEnv.GMAIL_PASS ||
+              freshEnv.GMAIL_APP_PASS ||
+              freshEnv.GMAIL_PASSWORD ||
+              freshEnv.EMAIL_PASS ||
+              freshEnv.EMAIL_PASSWORD ||
+              '';
+
+            const smtpPass = rawPass ? rawPass.trim().replace(/\s+/g, '') : '';
 
             if (resendApiKey) {
               const resendRes = await fetch('https://api.resend.com/emails', {
@@ -79,7 +102,7 @@ function emailApiPlugin(env: Record<string, string>): Plugin {
 
             if (smtpUser && smtpPass) {
               const cleanPass = smtpPass.replace(/\s+/g, '');
-              const isGmail = (env.SMTP_HOST || '').includes('gmail') || smtpUser.includes('gmail.com');
+              const isGmail = (freshEnv.SMTP_HOST || '').includes('gmail') || smtpUser.includes('gmail.com');
 
               const transporter = nodemailer.createTransport(
                 isGmail
@@ -91,9 +114,9 @@ function emailApiPlugin(env: Record<string, string>): Plugin {
                       }
                     }
                   : {
-                      host: env.SMTP_HOST || 'smtp.gmail.com',
-                      port: Number(env.SMTP_PORT) || 465,
-                      secure: Number(env.SMTP_PORT) === 465 || !env.SMTP_PORT,
+                      host: freshEnv.SMTP_HOST || 'smtp.gmail.com',
+                      port: Number(freshEnv.SMTP_PORT) || 465,
+                      secure: Number(freshEnv.SMTP_PORT) === 465 || !freshEnv.SMTP_PORT,
                       auth: {
                         user: smtpUser,
                         pass: cleanPass

@@ -125,7 +125,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
     } else if (result.notConfigured) {
       setStatusMessage({
         type: 'info',
-        text: 'Doğrudan otomatik gönderim için .env dosyasında SMTP veya Resend API anahtarı tanımlanmalıdır. Aşağıdaki "Gmail ile Aç ve Gönder" tuşuna basarak hemen gönderebilirsiniz!'
+        text: result.message || 'Doğrudan otomatik gönderim için .env dosyasında SMTP veya Resend API anahtarı tanımlanmalıdır. Aşağıdaki "Gmail ile Aç ve Gönder" tuşuna basarak hemen gönderebilirsiniz!'
       });
     } else {
       setStatusMessage({
