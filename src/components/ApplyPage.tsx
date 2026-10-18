@@ -1028,7 +1028,7 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({
 
                       <div>
                         <label className="block text-xs text-slate-300 mb-1 font-medium">
-                          Explain the final documents and their details (Resolution Paper, Declaration, Communiqué, Final Directive) *
+                          Explain the final documents and their details (Resolution Paper, Declaration, Communiqué, Final Directive,Bill) *
                         </label>
                         <textarea
                           rows={4}
