@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import {
   Search,
@@ -29,6 +29,19 @@ interface AdminDashboardProps {
   onNavigate?: (page: PageView) => void;
 }
 
+const tableNames = ['registrations', 'delegations', 'chairboard_apps', 'admin_apps', 'press_apps'] as const;
+type ApplicationTable = typeof tableNames[number];
+const emptyLists: Record<ApplicationTable, any[]> = {
+  registrations: [], delegations: [], chairboard_apps: [], admin_apps: [], press_apps: []
+};
+const tableLabels: Record<ApplicationTable, string> = {
+  registrations: 'Delegeler',
+  delegations: 'Delegasyonlar',
+  chairboard_apps: 'Chairboard',
+  admin_apps: 'Admin Ekibi',
+  press_apps: 'Basın'
+};
+
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [emailInput, setEmailInput] = useState('');
@@ -39,6 +52,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   const [statusFilter, setStatusFilter] = useState<StatusFilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [failedTables, setFailedTables] = useState<ApplicationTable[]>([]);
+  const activeRequest = useRef<AbortController | null>(null);
   const [activeApp, setActiveApp] = useState<{
     item: any;
     tab: 'details' | 'email';
@@ -59,19 +74,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     return () => subscription.unsubscribe();
   }, []);
 
-  const [data, setData] = useState<Record<string, any[]>>({
-    registrations: [],
-    delegations: [],
-    chairboard_apps: [],
-    admin_apps: [],
-    press_apps: []
-  });
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchAllData();
-    }
-  }, [isAuthenticated]);
+  const [data, setData] = useState<Record<string, any[]>>(emptyLists);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,51 +118,73 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     setPasswordInput('');
   };
 
-  const fetchAllData = async () => {
+  const fetchAllData = useCallback(async () => {
+    if (!isAuthenticated || activeRequest.current) return;
+    const controller = new AbortController();
+    activeRequest.current = controller;
     setLoading(true);
-    try {
-      const tabs: Exclude<TabType, 'all'>[] = [
-        'registrations',
-        'delegations',
-        'chairboard_apps',
-        'admin_apps',
-        'press_apps'
-      ];
-      const results: Record<string, any[]> = {};
-
-      for (const tab of tabs) {
-        const { data: tableData, error } = await supabase
-          .from(tab)
-          .select('*');
-
-        if (error) {
-          console.error(`Error fetching ${tab}:`, error);
-          results[tab] = [];
-        } else {
-          const sorted = (tableData || []).map((row: any) => ({
-            ...row,
-            _table: tab
-          })).sort((a: any, b: any) => {
-            const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
-            const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
-            return dateB - dateA;
-          });
-          results[tab] = sorted;
-        }
+    const timeout = window.setTimeout(() => controller.abort(), 30000);
+    const reads = await Promise.allSettled(tableNames.map(async table => {
+      const rows: any[] = [];
+      const pageSize = 500;
+      let lastId: string | undefined;
+      while (true) {
+        let query = supabase.from(table).select('*').order('id').limit(pageSize);
+        if (lastId) query = query.gt('id', lastId);
+        const { data: page, error } = await query.abortSignal(controller.signal);
+        if (error || !page) throw new Error('Liste yüklenemedi');
+        rows.push(...page.map(row => ({ ...row, _table: table })));
+        if (page.length < pageSize) break;
+        lastId = page[page.length - 1].id;
       }
+      return rows.sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+    }));
+    window.clearTimeout(timeout);
+    if (activeRequest.current !== controller) return;
+    const updates: Record<string, any[]> = {};
+    const failed: ApplicationTable[] = [];
+    reads.forEach((result, index) => {
+      const table = tableNames[index];
+      if (result.status === 'fulfilled') updates[table] = result.value;
+      else failed.push(table);
+    });
+    setData(previous => ({ ...previous, ...updates }));
+    setFailedTables(failed);
+    setLoading(false);
+    activeRequest.current = null;
+  }, [isAuthenticated]);
 
-      setData(results);
-    } catch (err) {
-      console.error('Failed to fetch data', err);
-    } finally {
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setData(emptyLists);
+      setFailedTables([]);
       setLoading(false);
+      return;
     }
-  };
+    const refreshVisible = () => {
+      if (!document.hidden) void fetchAllData();
+    };
+    refreshVisible();
+    const timer = window.setInterval(refreshVisible, 15000);
+    document.addEventListener('visibilitychange', refreshVisible);
+    window.addEventListener('online', refreshVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', refreshVisible);
+      window.removeEventListener('online', refreshVisible);
+      activeRequest.current?.abort();
+      activeRequest.current = null;
+    };
+  }, [isAuthenticated, fetchAllData]);
 
   const handleApprovalSuccess = (
     updatedId: string,
     status: ApplicationStatus = 'approved'
   ) => {
+    // A read that started before this decision could otherwise overwrite it.
+    activeRequest.current?.abort();
+    activeRequest.current = null;
+    setLoading(false);
     setData(prev => {
       const next = { ...prev };
       for (const key of Object.keys(next)) {
@@ -640,6 +665,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
           </div>
         </div>
 
+        {failedTables.length > 0 && (
+          <p role="alert" className="text-sm text-amber-300">
+            Güncellenemeyen listeler: {failedTables.map(table => tableLabels[table]).join(', ')}. Varsa son yüklenen kayıtlar gösteriliyor.
+          </p>
+        )}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <div className="p-4 rounded-xl bg-[#0c0c14]/90 border border-white/10 flex items-center justify-between">
             <div>
@@ -824,7 +854,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 text-slate-300">
-                {loading ? (
+                {loading && allApplications.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-4 py-16 text-center text-slate-400 font-mono">
                       <div className="inline-flex items-center gap-2">
@@ -836,7 +866,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                 ) : filteredData.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-4 py-16 text-center text-slate-400">
-                      {searchQuery
+                      {(activeTab === 'all' ? failedTables.length > 0 : failedTables.includes(activeTab)) ? 'Liste tam olarak güncellenemedi.' : searchQuery
                         ? 'Arama kriterlerinize uyan başvuru bulunamadı.'
                         : 'Bu kategoride henüz başvuru bulunmamaktadır.'}
                     </td>
