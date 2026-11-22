@@ -47,7 +47,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [authError, setAuthError] = useState('');
-  const [resetNotice, setResetNotice] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilterType>('all');
@@ -107,7 +106,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     }
 
     setAuthLoading(true);
-    setResetNotice('');
     setAuthError('');
 
     try {
@@ -124,27 +122,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       }
     } catch (err: any) {
       setAuthError(err.message || 'Giriş sırasında bir hata oluştu.');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const requestPasswordReset = async () => {
-    setAuthError('');
-    setResetNotice('');
-    if (!emailInput.trim()) {
-      setAuthError('Şifre yenilemek için e-posta adresinizi girin.');
-      return;
-    }
-    setAuthLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(emailInput.trim(), {
-        redirectTo: new URL('/admin/recovery', window.location.origin).href
-      });
-      if (error) throw error;
-      setResetNotice('Bu adresle kayıtlı bir hesap varsa şifre yenileme bağlantısı gönderilecek.');
-    } catch {
-      setAuthError('Şifre yenileme isteği işlenemedi. Daha sonra tekrar deneyin.');
     } finally {
       setAuthLoading(false);
     }
@@ -652,12 +629,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
             >
               {authLoading ? 'Doğrulanıyor...' : 'Yönetici Paneline Giriş Yap'}
             </button>
-
-            <button type="button" onClick={requestPasswordReset} disabled={authLoading}
-              className="text-sm text-amber-400 underline disabled:opacity-50">
-              Şifremi unuttum
-            </button>
-            {resetNotice && <p role="status" className="text-sm text-slate-300">{resetNotice}</p>}
 
             {onNavigate && (
               <div className="text-center pt-2">
