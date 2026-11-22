@@ -1,7 +1,15 @@
 import nodemailer from 'nodemailer';
 import { createClient } from '@supabase/supabase-js';
 
-export const handler = async (event: any) => {
+type EmailEvent = {
+  httpMethod: string;
+  headers: Record<string, string | undefined>;
+  body: string | null;
+};
+
+const applicationTables = new Set(['registrations', 'delegations', 'chairboard_apps', 'admin_apps', 'press_apps']);
+
+export const handleEmail = async (event: EmailEvent, env: NodeJS.ProcessEnv) => {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -21,67 +29,76 @@ export const handler = async (event: any) => {
   }
 
   const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://wqrlqoxgsutblmrnkmqi.supabase.co';
-  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_TZ7Wnp7TTpld6tRAt5TO4w_9_wcs-_0';
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const supabaseUrl = env.VITE_SUPABASE_URL || 'https://wqrlqoxgsutblmrnkmqi.supabase.co';
+  const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_TZ7Wnp7TTpld6tRAt5TO4w_9_wcs-_0';
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
 
   const { data: { user }, error: userError } = await supabase.auth.getUser(token);
   if (userError || !user) {
     return {
-      statusCode: 403,
+      statusCode: 401,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ success: false, error: 'Erişim reddedildi: Yönetici oturumu geçersiz veya süresi dolmuş.' })
     };
   }
 
   try {
-    const data = JSON.parse(event.body || '{}');
-    const { to, subject, text, html } = data;
-
-    if (!to || !subject || (!text && !html)) {
+    const { data: isAdmin, error: roleError } = await supabase.rpc('is_panel_admin');
+    if (roleError || isAdmin !== true) {
       return {
-        statusCode: 400,
+        statusCode: roleError ? 503 : 403,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ success: false, error: 'to, subject ve text/html alanları zorunludur.' })
+        body: JSON.stringify({ success: false, error: 'Yönetici yetkisi doğrulanamadı.' })
       };
     }
 
-    // Basic recipient email sanitization
-    const recipientList = Array.isArray(to) ? to : [to];
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const allValid = recipientList.every((e: string) => typeof e === 'string' && emailRegex.test(e.trim()));
-    if (!allValid) {
+    const { applicationId, table, subject, text, html } = JSON.parse(event.body || '{}');
+    if (!applicationTables.has(table) || typeof applicationId !== 'string' ||
+        typeof subject !== 'string' || !subject.trim() || typeof text !== 'string' || !text.trim() ||
+        (html !== undefined && typeof html !== 'string')) {
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ success: false, error: 'Geçersiz alıcı e-posta formatı.' })
+        body: JSON.stringify({ success: false, error: 'Başvuru, konu ve mesaj gereklidir.' })
+      };
+    }
+
+    const { data: application, error } = await supabase.from(table)
+      .select('email').eq('id', applicationId).maybeSingle();
+    const recipient = application?.email?.trim();
+    if (error || !recipient || !/^[^\s@,;:<>()"\\]+@[^\s@,;:<>()"\\]+\.[^\s@,;:<>()"\\]+$/.test(recipient)) {
+      return {
+        statusCode: 400,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ success: false, error: 'Başvuru alıcısı doğrulanamadı.' })
       };
     }
 
     const smtpUser =
-      process.env.SMTP_USER ||
-      process.env.VITE_SMTP_USER ||
-      process.env.VITE_SENDER_EMAIL ||
-      process.env.GMAIL_USER ||
-      process.env.EMAIL_USER ||
+      env.SMTP_USER ||
+      env.VITE_SMTP_USER ||
+      env.VITE_SENDER_EMAIL ||
+      env.GMAIL_USER ||
+      env.EMAIL_USER ||
       'msemun26@gmail.com';
 
     const rawPass =
-      process.env.SMTP_PASS ||
-      process.env.SMTP_PASSWORD ||
-      process.env.VITE_SMTP_PASS ||
-      process.env.VITE_SMTP_PASSWORD ||
-      process.env.GMAIL_PASS ||
-      process.env.GMAIL_APP_PASS ||
-      process.env.GMAIL_PASSWORD ||
-      process.env.EMAIL_PASS ||
-      process.env.EMAIL_PASSWORD ||
+      env.SMTP_PASS ||
+      env.SMTP_PASSWORD ||
+      env.GMAIL_PASS ||
+      env.GMAIL_APP_PASS ||
+      env.GMAIL_PASSWORD ||
+      env.EMAIL_PASS ||
+      env.EMAIL_PASSWORD ||
       '';
 
     const cleanPass = rawPass ? rawPass.trim().replace(/\s+/g, '') : '';
-    const senderEmail = process.env.VITE_SENDER_EMAIL || smtpUser || 'msemun26@gmail.com';
-    const senderName = process.env.VITE_SENDER_NAME || 'MSEMUN Secretariat';
-    const resendApiKey = process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY;
+    const senderEmail = env.VITE_SENDER_EMAIL || smtpUser || 'msemun26@gmail.com';
+    const senderName = env.VITE_SENDER_NAME || 'MSEMUN Secretariat';
+    const resendApiKey = env.RESEND_API_KEY;
 
     // Option 1: Resend API
     if (resendApiKey) {
@@ -93,7 +110,7 @@ export const handler = async (event: any) => {
         },
         body: JSON.stringify({
           from: `${senderName} <${senderEmail}>`,
-          to: recipientList,
+          to: [recipient],
           subject: subject,
           text: text,
           html: html || (text ? text.replace(/\n/g, '<br/>') : '')
@@ -118,7 +135,7 @@ export const handler = async (event: any) => {
 
     // Option 2: Gmail SMTP
     if (smtpUser && cleanPass) {
-      const isGmail = (process.env.SMTP_HOST || '').includes('gmail') || smtpUser.includes('gmail.com');
+      const isGmail = (env.SMTP_HOST || '').includes('gmail') || smtpUser.includes('gmail.com');
 
       const transporter = nodemailer.createTransport(
         isGmail
@@ -130,9 +147,9 @@ export const handler = async (event: any) => {
               }
             }
           : {
-              host: process.env.SMTP_HOST || 'smtp.gmail.com',
-              port: Number(process.env.SMTP_PORT) || 465,
-              secure: Number(process.env.SMTP_PORT) === 465 || !process.env.SMTP_PORT,
+              host: env.SMTP_HOST || 'smtp.gmail.com',
+              port: Number(env.SMTP_PORT) || 465,
+              secure: Number(env.SMTP_PORT) === 465 || !env.SMTP_PORT,
               auth: {
                 user: smtpUser,
                 pass: cleanPass
@@ -143,7 +160,7 @@ export const handler = async (event: any) => {
       const info = await transporter.sendMail({
         from: `"${senderName}" <${smtpUser}>`,
         replyTo: senderEmail,
-        to: recipientList,
+        to: [recipient],
         subject: subject,
         text: text,
         html: html || (text ? text.replace(/\n/g, '<br/>') : '')
@@ -156,7 +173,7 @@ export const handler = async (event: any) => {
       };
     }
 
-    const hasUser = !!(process.env.SMTP_USER || process.env.VITE_SMTP_USER || process.env.VITE_SENDER_EMAIL);
+    const hasUser = !!(env.SMTP_USER || env.VITE_SMTP_USER || env.VITE_SENDER_EMAIL);
     const hasPass = !!cleanPass;
 
     return {
@@ -168,11 +185,13 @@ export const handler = async (event: any) => {
         message: `Netlify ortamında e-posta şifresi eksik (Kullanıcı: ${hasUser ? 'Tanımlı' : 'Yok'}, Şifre: ${hasPass ? 'Tanımlı' : 'Eksik'}). Netlify -> Site configuration -> Environment variables sekmesinde SMTP_PASS veya SMTP_PASSWORD değişkeninin "Functions" kapsamında tanımlı olduğundan ve ardından "Trigger deploy" yapıldığından emin olun.`
       })
     };
-  } catch (err: any) {
+  } catch (err) {
     return {
-      statusCode: 500,
+      statusCode: err instanceof SyntaxError ? 400 : 500,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ success: false, error: err.message || 'Server error' })
+      body: JSON.stringify({ success: false, error: 'E-posta isteği işlenemedi.' })
     };
   }
 };
+
+export const handler = (event: EmailEvent) => handleEmail(event, process.env);

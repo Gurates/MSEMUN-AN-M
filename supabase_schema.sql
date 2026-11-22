@@ -1,3 +1,5 @@
+-- Yeni kurulum: Bu dosyadan sonra supabase_security_fix.sql dosyasını çalıştırın.
+BEGIN;
 
 CREATE TABLE IF NOT EXISTS public.registrations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -92,32 +94,4 @@ ALTER TABLE public.chairboard_apps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admin_apps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.press_apps ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow anonymous insert on registrations" 
-ON public.registrations FOR INSERT TO anon, authenticated WITH CHECK (true);
-
-CREATE POLICY "Admin full access on registrations" 
-ON public.registrations FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
-CREATE POLICY "Allow anonymous insert on delegations" 
-ON public.delegations FOR INSERT TO anon, authenticated WITH CHECK (true);
-
-CREATE POLICY "Admin full access on delegations" 
-ON public.delegations FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
-CREATE POLICY "Allow anonymous insert on chairboard_apps" 
-ON public.chairboard_apps FOR INSERT TO anon, authenticated WITH CHECK (true);
-
-CREATE POLICY "Admin full access on chairboard_apps" 
-ON public.chairboard_apps FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
-CREATE POLICY "Allow anonymous insert on admin_apps" 
-ON public.admin_apps FOR INSERT TO anon, authenticated WITH CHECK (true);
-
-CREATE POLICY "Admin full access on admin_apps" 
-ON public.admin_apps FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
-CREATE POLICY "Allow anonymous insert on press_apps" 
-ON public.press_apps FOR INSERT TO anon, authenticated WITH CHECK (true);
-
-CREATE POLICY "Admin full access on press_apps" 
-ON public.press_apps FOR ALL TO authenticated USING (true) WITH CHECK (true);
+COMMIT;

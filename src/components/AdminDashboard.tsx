@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { PageView } from './Navbar';
 import { ApplicationDetailModal } from './ApplicationDetailModal';
-import { getApprovedMap, ApplicationStatus } from '../lib/approvalStore';
+import { clearLegacyApprovalCache, ApplicationStatus } from '../lib/approvalStore';
 
 type TabType = 'all' | 'registrations' | 'delegations' | 'chairboard_apps' | 'admin_apps' | 'press_apps';
 type StatusFilterType = 'all' | 'pending' | 'approved' | 'waitlist' | 'rejected';
@@ -43,10 +43,11 @@ const tableLabels: Record<ApplicationTable, string> = {
 };
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [authError, setAuthError] = useState('');
+  const [resetNotice, setResetNotice] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilterType>('all');
@@ -61,17 +62,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   } | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setIsAuthenticated(true);
-      }
-    });
-
+    clearLegacyApprovalCache();
+    let previousUser: string | undefined;
+    let revision = 0;
+    let timer: number;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session);
+      const current = ++revision;
+      window.clearTimeout(timer);
+      if (!session || session.user.id !== previousUser) {
+        activeRequest.current?.abort();
+        activeRequest.current = null;
+        setIsAdmin(false);
+        setActiveApp(null);
+        setData(emptyLists);
+      }
+      previousUser = session?.user.id;
+      if (!session) return;
+
+      // Run database requests after the Auth callback releases its session lock.
+      timer = window.setTimeout(async () => {
+        const { data: allowed, error } = await supabase.rpc('is_panel_admin');
+        if (current !== revision) return;
+        if (error || allowed !== true) setActiveApp(null);
+        setIsAdmin(!error && allowed === true);
+        setAuthError(error ? 'Yönetici yetkisi doğrulanamadı.' :
+          allowed === true ? '' : 'Bu hesabın yönetici yetkisi yok.');
+      }, 0);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      revision++;
+      window.clearTimeout(timer);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const [data, setData] = useState<Record<string, any[]>>(emptyLists);
@@ -84,10 +107,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     }
 
     setAuthLoading(true);
+    setResetNotice('');
     setAuthError('');
 
     try {
-      const { data: authData, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: emailInput.trim(),
         password: passwordInput.trim()
       });
@@ -96,12 +120,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
         setAuthError(error.message === 'Invalid login credentials' 
           ? 'Hatalı e-posta veya şifre girdiniz.' 
           : `Giriş hatası: ${error.message}`);
-      } else if (authData.session) {
-        setIsAuthenticated(true);
-        setAuthError('');
+
       }
     } catch (err: any) {
       setAuthError(err.message || 'Giriş sırasında bir hata oluştu.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const requestPasswordReset = async () => {
+    setAuthError('');
+    setResetNotice('');
+    if (!emailInput.trim()) {
+      setAuthError('Şifre yenilemek için e-posta adresinizi girin.');
+      return;
+    }
+    setAuthLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(emailInput.trim(), {
+        redirectTo: new URL('/admin/recovery', window.location.origin).href
+      });
+      if (error) throw error;
+      setResetNotice('Bu adresle kayıtlı bir hesap varsa şifre yenileme bağlantısı gönderilecek.');
+    } catch {
+      setAuthError('Şifre yenileme isteği işlenemedi. Daha sonra tekrar deneyin.');
     } finally {
       setAuthLoading(false);
     }
@@ -113,17 +156,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     } catch (err) {
       console.warn('Sign out error:', err);
     }
-    setIsAuthenticated(false);
+    setIsAdmin(false);
     setEmailInput('');
     setPasswordInput('');
   };
 
   const fetchAllData = useCallback(async () => {
-    if (!isAuthenticated || activeRequest.current) return;
+    if (!isAdmin || activeRequest.current) return;
     const controller = new AbortController();
     activeRequest.current = controller;
     setLoading(true);
     const timeout = window.setTimeout(() => controller.abort(), 30000);
+    const { data: allowed, error: roleError } = await supabase.rpc('is_panel_admin').abortSignal(controller.signal);
+    if (activeRequest.current !== controller) {
+      window.clearTimeout(timeout);
+      return;
+    }
+    if (roleError || allowed !== true) {
+      window.clearTimeout(timeout);
+      activeRequest.current = null;
+      setActiveApp(null);
+      setIsAdmin(false);
+      setAuthError('Yönetici yetkisi doğrulanamadı. Tekrar giriş yapınız.');
+      return;
+    }
     const reads = await Promise.allSettled(tableNames.map(async table => {
       const rows: any[] = [];
       const pageSize = 500;
@@ -152,10 +208,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     setFailedTables(failed);
     setLoading(false);
     activeRequest.current = null;
-  }, [isAuthenticated]);
+  }, [isAdmin]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAdmin) {
       setData(emptyLists);
       setFailedTables([]);
       setLoading(false);
@@ -175,7 +231,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       activeRequest.current?.abort();
       activeRequest.current = null;
     };
-  }, [isAuthenticated, fetchAllData]);
+  }, [isAdmin, fetchAllData]);
 
   const handleApprovalSuccess = (
     updatedId: string,
@@ -210,7 +266,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   };
 
   const filteredData = useMemo(() => {
-    const approvedMap = getApprovedMap();
 
     let currentData: any[] = [];
     if (activeTab === 'all') {
@@ -242,8 +297,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     }
 
     currentData = currentData.map(item => {
-      const stored = approvedMap[item.id];
-      const effStatus = stored?.status || item.status || 'pending';
+      const effStatus = item.status || 'pending';
       return {
         ...item,
         status: effStatus,
@@ -289,15 +343,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   }, [data]);
 
   const statusStats = useMemo(() => {
-    const approvedMap = getApprovedMap();
     let approved = 0;
     let waitlist = 0;
     let rejected = 0;
     let pending = 0;
 
     for (const item of allApplications) {
-      const stored = approvedMap[item.id];
-      const eff = stored?.status || item.status || 'pending';
+      const eff = item.status || 'pending';
       if (eff === 'approved') approved++;
       else if (eff === 'waitlist') waitlist++;
       else if (eff === 'rejected') rejected++;
@@ -542,7 +594,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     { id: 'press_apps' as TabType, label: 'Basın / Press', icon: FileText }
   ];
 
-  if (!isAuthenticated) {
+  if (!isAdmin) {
     return (
       <div className="min-h-screen pt-28 sm:pt-36 pb-16 flex items-center justify-center px-4 bg-[#060608] cinematic-grid">
         <div className="w-full max-w-md p-8 rounded-2xl bg-[#0c0c14]/95 border border-amber-500/30 shadow-2xl shadow-amber-500/10 backdrop-blur-xl">
@@ -600,6 +652,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
             >
               {authLoading ? 'Doğrulanıyor...' : 'Yönetici Paneline Giriş Yap'}
             </button>
+
+            <button type="button" onClick={requestPasswordReset} disabled={authLoading}
+              className="text-sm text-amber-400 underline disabled:opacity-50">
+              Şifremi unuttum
+            </button>
+            {resetNotice && <p role="status" className="text-sm text-slate-300">{resetNotice}</p>}
 
             {onNavigate && (
               <div className="text-center pt-2">

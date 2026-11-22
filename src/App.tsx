@@ -5,6 +5,8 @@ import { CommitteesPage } from './components/CommitteesPage';
 import { ApplyPage } from './components/ApplyPage';
 import { AdminDashboard } from './components/AdminDashboard';
 import { VideoIntro } from './components/VideoIntro';
+import { PasswordRecovery } from './components/PasswordRecovery';
+import { supabase } from './lib/supabase';
 
 export const App: React.FC = () => {
   const getInitialPage = (): PageView => {
@@ -23,6 +25,13 @@ export const App: React.FC = () => {
   };
 
   const initialPage = getInitialPage();
+  const [recovering, setRecovering] = useState(window.location.pathname === '/admin/recovery');
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(event => {
+      if (event === 'PASSWORD_RECOVERY') setRecovering(true);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const [showIntro, setShowIntro] = useState<boolean>(() => {
     if (initialPage === 'admin') return false;
@@ -74,6 +83,8 @@ export const App: React.FC = () => {
   const handleSelectCommitteeForApply = (committeeId: string) => {
     setSelectedCommitteeForApply(committeeId);
   };
+
+  if (recovering) return <PasswordRecovery />;
 
   const isIntroActive = showIntro && currentPage !== 'admin';
 

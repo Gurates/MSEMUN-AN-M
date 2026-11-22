@@ -40,11 +40,9 @@ import {
   sendEmailViaApi
 } from '../lib/emailService';
 import {
-  markApplicationStatus,
-  getApplicationStatus,
+  saveApplicationStatus,
   ApplicationStatus
 } from '../lib/approvalStore';
-import { supabase } from '../lib/supabase';
 
 interface ApplicationDetailModalProps {
   item: any;
@@ -76,7 +74,7 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
     item.pref1 ||
     (item.app_type === 'Delegation' ? 'Delegasyon Grubu' : item.app_type || 'Genel Kurul');
 
-  const currentStatus = getApplicationStatus(item.id, item.status);
+  const currentStatus = item.status || 'pending';
   const isChairboard =
     item._table === 'chairboard_apps' ||
     item.app_type === 'Chairboard' ||
@@ -125,7 +123,7 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const completeApprovalFlow = async (_note: string) => {
+  const completeApprovalFlow = async (note: string) => {
     const statusMap: Record<EmailDecision, ApplicationStatus> = {
       approval: 'approved',
       rejection: 'rejected',
@@ -133,33 +131,23 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
     };
     const targetStatus = statusMap[decision];
 
-    markApplicationStatus(item.id, applicantEmail, senderEmail, targetStatus);
-
-    try {
-      const resolvedTable = item._table || tableName || 'registrations';
-      const { error } = await supabase
-        .from(resolvedTable)
-        .update({ status: targetStatus })
-        .eq('id', item.id);
-
-      if (error) {
-        console.warn('Supabase status update error (saved locally):', error.message);
-      }
-    } catch (e) {
-      console.warn('Supabase update attempt:', e);
+    const saved = await saveApplicationStatus(item._table || tableName, item.id, targetStatus);
+    if (!saved) {
+      setStatusMessage({ type: 'error', text: note + '. Başvuru durumu kaydedilemedi. Tekrar e-posta göndermeden önce başvuruyu kontrol edin.' });
+      return false;
     }
-
     onSuccess(item.id, targetStatus);
+    return true;
   };
 
   const handleOpenGmail = async () => {
     openInGmail(applicantEmail, subject, body);
-    await completeApprovalFlow('Gmail üzerinden gönderildi');
+    await completeApprovalFlow('Gmail taslağı açıldı');
   };
 
   const handleOpenMailto = async () => {
     openInMailto(applicantEmail, subject, body);
-    await completeApprovalFlow('Mail istemcisi üzerinden gönderildi');
+    await completeApprovalFlow('E-posta taslağı açıldı');
   };
 
   const handleSendDirectApi = async () => {
@@ -173,7 +161,8 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
 
     const html = generateHtmlTemplate(body, applicantName, decision);
     const result = await sendEmailViaApi({
-      to: applicantEmail,
+      applicationId: item.id,
+      table: item._table || tableName,
       subject,
       text: body,
       html,
@@ -185,8 +174,7 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
     setSending(false);
 
     if (result.success) {
-      await completeApprovalFlow('Doğrudan API ile iletildi');
-      setSentSuccess(true);
+      setSentSuccess(await completeApprovalFlow('Doğrudan API ile iletildi'));
     } else if (result.notConfigured) {
       setStatusMessage({
         type: 'info',

@@ -23,8 +23,7 @@ import {
   openInMailto,
   sendEmailViaApi
 } from '../lib/emailService';
-import { markApplicationApproved } from '../lib/approvalStore';
-import { supabase } from '../lib/supabase';
+import { saveApplicationStatus } from '../lib/approvalStore';
 
 interface EmailModalProps {
   item: any;
@@ -90,12 +89,12 @@ export const EmailModal: React.FC<EmailModalProps> = ({
 
   const handleOpenGmail = async () => {
     openInGmail(applicantEmail, subject, body);
-    await completeApprovalFlow('Gmail üzerinden gönderildi');
+    await completeApprovalFlow('Gmail taslağı açıldı');
   };
 
   const handleOpenMailto = async () => {
     openInMailto(applicantEmail, subject, body);
-    await completeApprovalFlow('Mail istemcisi üzerinden gönderildi');
+    await completeApprovalFlow('E-posta taslağı açıldı');
   };
 
   const handleSendDirectApi = async () => {
@@ -109,7 +108,8 @@ export const EmailModal: React.FC<EmailModalProps> = ({
 
     const html = generateHtmlTemplate(body, applicantName);
     const result = await sendEmailViaApi({
-      to: applicantEmail,
+      applicationId: item.id,
+      table: item._table || tableName,
       subject,
       text: body,
       html,
@@ -120,8 +120,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
     setSending(false);
 
     if (result.success) {
-      await completeApprovalFlow('Doğrudan API ile başarıyla gönderildi');
-      setSentSuccess(true);
+      setSentSuccess(await completeApprovalFlow('Doğrudan API ile başarıyla gönderildi'));
     } else if (result.notConfigured) {
       setStatusMessage({
         type: 'info',
@@ -135,24 +134,14 @@ export const EmailModal: React.FC<EmailModalProps> = ({
     }
   };
 
-  const completeApprovalFlow = async (_note: string) => {
-    markApplicationApproved(item.id, applicantEmail, senderEmail);
-
-    try {
-      const resolvedTable = item._table || tableName || 'registrations';
-      const { error } = await supabase
-        .from(resolvedTable)
-        .update({ status: 'approved' })
-        .eq('id', item.id);
-
-      if (error) {
-        console.warn('Supabase status update error (saved locally):', error.message);
-      }
-    } catch (e) {
-      console.warn('Supabase update attempt:', e);
+  const completeApprovalFlow = async (note: string) => {
+    const saved = await saveApplicationStatus(item._table || tableName, item.id, 'approved');
+    if (!saved) {
+      setStatusMessage({ type: 'error', text: note + '. Başvuru durumu kaydedilemedi. Tekrar e-posta göndermeden önce başvuruyu kontrol edin.' });
+      return false;
     }
-
     onSuccess(item.id);
+    return true;
   };
 
   return (

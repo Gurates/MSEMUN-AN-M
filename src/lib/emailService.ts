@@ -13,7 +13,8 @@ export interface EmailParams {
 }
 
 export interface SendEmailPayload {
-  to: string;
+  applicationId: string;
+  table: string;
   subject: string;
   text: string;
   html: string;
