@@ -39,6 +39,21 @@ export const getSenderName = (): string => {
   return import.meta.env.VITE_SENDER_NAME || 'MSEMUN Secretariat';
 };
 
+const paymentAccount = `Account Name: Narlıdere Mehmet Seyfi Eraltay Anadolu Lisesi Okul Aile Birliği
+Account Holder: Narlıdere Mehmet Seyfi Eraltay Anadolu Lisesi Okul Aile Birliği
+IBAN: TR20 0001 0007 2608 6323 8950 01
+Ziraat Bankası`;
+
+const approvalRoles = new Map([
+  ['Delegate', 'Delegate'],
+  ['Delege', 'Delegate'],
+  ['Admin Staff', 'Admin'],
+  ['Admin', 'Admin'],
+  ['Press Corps', 'Press'],
+  ['Press', 'Press'],
+  ['Chairboard', 'Chairboard'],
+]);
+
 /**
  * 1. ASIL ONAY MAİLİ ŞABLONU (Approval)
  * - Katılımcı hangi pozisyona başvurduysa (Delege, Chairboard, Admin, Press vb.) o pozisyonun ONAYI olarak gider.
@@ -47,20 +62,24 @@ export const generateApprovalTemplate = (params: EmailParams, isChairboard: bool
   const { name, role = isChairboard ? 'Chairboard' : 'Delegate' } = params;
   const applicantName = name ? name.trim() : 'Applicant';
   const effectiveRole = isChairboard ? 'Chairboard' : role;
+  const approvalRole = approvalRoles.get(effectiveRole);
+  const fee = approvalRole === 'Delegate' ? 975 : 750;
+  const payment = approvalRole ? `${fee} TL` : '... TL';
+  const deadline = approvalRole ? '28th November, Saturday 23.59' : '...';
+  const account = approvalRole ? paymentAccount : 'Account Name: \nAccount Holder:\nIBAN:';
+  const example = approvalRole ? 'Deniz Ayyıldız - Delegate' : `${applicantName} - ${effectiveRole}`;
 
-  return `Dear ${applicantName},
+  return `Dear ${approvalRole ? 'Applicant' : applicantName},
 
-We are very pleased with your interest in being part of the MSEMUN'26. Following a long review process by our Secretariat, we are thrilled to inform you that your ${effectiveRole} application has been approved. 
+We are very pleased with your interest in being part of the MSEMUN'26. Following a long review process by our Secretariat, we are thrilled to inform you that your ${approvalRole ?? effectiveRole} application has been approved.
 
-To complete your registration, we kindly request a payment of ... TL to the bank account provided below until .... This fee is inclusive of the welcome pack, meals, desserts, beverages etc. 
+To complete your registration, we kindly request a payment of ${payment} to the bank account provided below until ${deadline}. This fee is inclusive of the welcome pack, meals, desserts, beverages etc.
 
-Account Name: 
-Account Holder:
-IBAN:
+${account}
 Description: Your Name - Position - Donation
-Description Example: ${applicantName} - ${effectiveRole} - Donation
+Description Example: ${example} - Donation
 
-After completing the payment, please reply to this email with the receipt before the deadline. Your registration will not be completed if you do not include the receipt. 
+After completing the payment, please reply to this email with the receipt before the deadline. Your registration will not be completed if you do not include the receipt.
 - Please be aware that all payments are non-refundable.
 
 Should you have any questions or require further assistance, please do not hesitate to contact us.
@@ -77,11 +96,8 @@ MSEMUN'26 Public Relations Team`;
 /**
  * 2. CHAIRBOARD İÇİN DELEGE TEKLİFİ ŞABLONU (Chairboard başvurusu kabul edilmeyip Delege olarak katılım teklif edildiğinde)
  */
-export const generateChairboardDelegateOfferTemplate = (params: EmailParams): string => {
-  const { name } = params;
-  const applicantName = name ? name.trim() : 'Applicant';
-
-  return `Dear ${applicantName},
+export const generateChairboardDelegateOfferTemplate = (_params: EmailParams): string => {
+  return `Dear Applicant,
 
 Thank you for your interest in applying for a Chairboard position at MSEMUN'26.
 
@@ -89,12 +105,10 @@ We regret to inform you that your Chairboard application has not been accepted f
 
 However, we are pleased to offer you the opportunity to participate in MSEMUN'26 as a Delegate. We would be delighted to welcome you to our conference in this capacity.
 
-To complete your registration, we kindly request a payment of ... TL to the bank account provided below by .... This fee includes the welcome pack, meals, desserts, beverages, and other conference amenities.
-Account Name:
-Account Holder:
-IBAN:
+To complete your registration, we kindly request a payment of 975 TL to the bank account provided below by 28th November, Saturday 23.59 This fee includes the welcome pack, meals, desserts, beverages, and other conference amenities.
+${paymentAccount}
 Description: Your Name – Delegate – Donation
-Description Example: ${applicantName} – Delegate – Donation
+Description Example: Deniz Ayyıldız – Delegate – Donation
 
 After completing the payment, please reply to this email with the receipt attached before the deadline. Your registration will not be completed unless the receipt is submitted on time.
 •Please be aware that all payments are non-refundable.
@@ -113,11 +127,10 @@ MSEMUN'26 Public Relations Team`;
 /**
  * 3. RET MAİLİ ŞABLONU (Rejection)
  */
-export const generateRejectionTemplate = (params: EmailParams): string => {
-  const { name } = params;
-  const applicantName = name ? name.trim() : 'Applicant';
+export const generateRejectionTemplate = (params: EmailParams, isChairboard = params.role === 'Chairboard'): string => {
+  if (isChairboard) return generateChairboardDelegateOfferTemplate(params);
 
-  return `Dear ${applicantName},
+  return `Dear Applicant,
 
 Thank you for your interest in participating in MSEMUN'26.
 
@@ -137,17 +150,14 @@ MSEMUN'26 Public Relations Team`;
 /**
  * 4. WAITLIST MAİLİ ŞABLONU (Waiting List)
  */
-export const generateWaitlistTemplate = (params: EmailParams): string => {
-  const { name, role = 'Delegate' } = params;
-  const applicantName = name ? name.trim() : 'Applicant';
-
-  return `Dear ${applicantName},
+export const generateWaitlistTemplate = (_params: EmailParams): string => {
+  return `Dear Applicant,
 
 Thank you for your interest in participating in MSEMUN'26.
 
 Following a thorough review process conducted by our Secretariat, we would like to inform you that your application has been placed on the waiting list.
 
-Please note that if a ${role} position becomes available, we will contact you regarding the possibility of participating in MSEMUN'26.
+Please note that if a position becomes available, we will contact you regarding the possibility of participating in MSEMUN'26.
 
 Should you have any questions or require further assistance, please do not hesitate to contact us.
 

@@ -110,7 +110,7 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
     } else if (decision === 'waitlist') {
       initialBody = generateWaitlistTemplate(params);
     } else {
-      initialBody = generateRejectionTemplate(params);
+      initialBody = generateRejectionTemplate(params, isChairboard);
     }
 
     setSubject(initialSubject);
